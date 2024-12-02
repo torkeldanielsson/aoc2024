@@ -1,14 +1,14 @@
-use std::{error::Error, fs};
+use std::{error::Error, time::Instant};
 
 #[derive(Clone)]
 struct State {
-    prev_val: i32,
+    prev_val: u16,
     is_inc: bool,
     is_dec: bool,
     has_done_skip: bool,
 }
 
-fn is_safe(nums: &[i32], i: usize, mut state: State) -> bool {
+fn is_safe(nums: &[u16], i: usize, mut state: State) -> bool {
     let a = state.prev_val;
     let b = nums[i];
 
@@ -28,7 +28,7 @@ fn is_safe(nums: &[i32], i: usize, mut state: State) -> bool {
         return false;
     }
 
-    if (a - b).abs() > 3 {
+    if (a as i32 - b as i32).abs() > 3 {
         return false;
     }
 
@@ -51,12 +51,14 @@ fn is_safe(nums: &[i32], i: usize, mut state: State) -> bool {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let input = fs::read_to_string("input")?;
+    let t = Instant::now();
+
+    let input = include_str!("../input");
 
     let mut res = 0;
 
     for line in input.lines() {
-        let numbers: Vec<i32> = line
+        let numbers: Vec<u16> = line
             .split_ascii_whitespace()
             .map(|s| s.parse().unwrap())
             .collect();
@@ -93,7 +95,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    println!("res: {res}");
+    println!("res: {res}, time: {} us", t.elapsed().as_micros());
 
     Ok(())
 }
