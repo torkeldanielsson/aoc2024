@@ -1,9 +1,12 @@
-use std::{collections::HashMap, error::Error};
+use rustc_hash::FxHashMap;
+use std::{error::Error, time::Instant};
 
 fn main() -> Result<(), Box<dyn Error>> {
+    let t = Instant::now();
+
     let input = include_str!("../input");
 
-    let mut d = HashMap::new();
+    let mut d = FxHashMap::with_capacity_and_hasher(50000, Default::default());
     let mut max_x: i32 = 0;
     let mut max_y: i32 = 0;
 
@@ -21,8 +24,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut res = 0;
 
-    for y in 0..=max_y {
-        for x in 0..=max_x {
+    for y in 1..max_y {
+        for x in 1..max_x {
             if d.get(&(x, y)) == Some(&'A') {
                 if d.get(&(x - 1, y - 1)) == Some(&'M')
                     && d.get(&(x - 1, y + 1)) == Some(&'M')
@@ -56,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    println!("res: {res}");
+    println!("res: {res}, time: {} us", t.elapsed().as_micros());
 
     Ok(())
 }
