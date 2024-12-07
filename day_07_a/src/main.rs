@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .map(|x| x.parse::<u64>().unwrap())
             .collect();
 
-        if test_ops(&nums, 0, 0, target) {
+        if test_ops(&nums, 1, nums[0], target) {
             res += target;
         }
     }
