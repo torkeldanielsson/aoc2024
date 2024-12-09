@@ -8,8 +8,8 @@ fn test_ops(nums: &[u64], pos: usize, acc_val: u64, target: u64) -> bool {
         return acc_val == target;
     }
 
-    test_ops(nums, pos + 1, acc_val + nums[pos], target)
-        || test_ops(nums, pos + 1, acc_val * nums[pos], target)
+    test_ops(nums, pos + 1, acc_val * nums[pos], target)
+        || test_ops(nums, pos + 1, acc_val + nums[pos], target)
         || test_ops(
             nums,
             pos + 1,

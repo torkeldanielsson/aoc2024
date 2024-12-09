@@ -36,13 +36,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // print_d(&d);
 
+    let mut cursor_end = d.len() - 1;
+    let mut cursor_start_start = 0;
+
     while file_id_counter > 0 {
         file_id_counter -= 1;
-        let mut cursor_end = d.len() - 1;
         while d[cursor_end].0 != file_id_counter {
             cursor_end -= 1;
         }
-        let mut cursor_start = 0;
+
+        while d[cursor_start_start].0 >= 0 {
+            cursor_start_start += 1;
+        }
+
+        let mut cursor_start = cursor_start_start;
+
         loop {
             while d[cursor_start].0 >= 0 {
                 cursor_start += 1;
@@ -52,18 +60,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                 break;
             }
 
-            #[allow(clippy::comparison_chain)]
-            if d[cursor_end].1 == d[cursor_start].1 {
-                d[cursor_start].0 = d[cursor_end].0;
-                d[cursor_end].0 = -1;
-                break;
-            } else if d[cursor_end].1 < d[cursor_start].1 {
-                d.insert(cursor_start, d[cursor_end]);
-                d[cursor_start + 1].1 -= d[cursor_start].1;
-                d[cursor_end + 1].0 = -1;
-                break;
-            } else {
-                cursor_start += 1;
+            match d[cursor_end].1.cmp(&d[cursor_start].1) {
+                std::cmp::Ordering::Equal => {
+                    d[cursor_start].0 = d[cursor_end].0;
+                    d[cursor_end].0 = -1;
+                    break;
+                }
+                std::cmp::Ordering::Less => {
+                    d.insert(cursor_start, d[cursor_end]);
+                    d[cursor_start + 1].1 -= d[cursor_start].1;
+                    d[cursor_end + 1].0 = -1;
+                    break;
+                }
+                std::cmp::Ordering::Greater => {
+                    cursor_start += 1;
+                }
             }
         }
         // print_d(&d);
