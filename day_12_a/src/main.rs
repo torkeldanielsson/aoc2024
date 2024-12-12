@@ -1,4 +1,4 @@
-use std::{error::Error, time::Instant};
+use std::{collections::HashSet, error::Error, time::Instant};
 
 use glam::{ivec2, IVec2};
 
@@ -30,7 +30,7 @@ impl<'a> Map<'a> {
 
 fn glob(
     map: &Map,
-    contiguous_set: &mut Vec<IVec2>,
+    contiguous_set: &mut HashSet<IVec2>,
     plant: u8,
     coord: &IVec2,
     border_len: &mut i32,
@@ -39,7 +39,7 @@ fn glob(
         let maybe = coord + neighbor;
         if !contiguous_set.contains(&maybe) {
             if map.at(&maybe) == plant {
-                contiguous_set.push(maybe);
+                contiguous_set.insert(maybe);
                 glob(map, contiguous_set, plant, &maybe, border_len);
             } else {
                 *border_len += 1;
@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let input = include_str!("../input");
     let map = Map::new(input);
 
-    let mut processed_coords = Vec::new();
+    let mut processed_coords: HashSet<IVec2> = HashSet::new();
 
     let mut res = 0;
 
@@ -62,8 +62,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         for x in 0..map.w {
             let coord = ivec2(x, y);
             if !processed_coords.contains(&coord) {
-                let mut contiguos_set = Vec::new();
-                contiguos_set.push(coord);
+                let mut contiguos_set = HashSet::new();
+                contiguos_set.insert(coord);
                 let mut border_len = 0;
                 glob(
                     &map,
