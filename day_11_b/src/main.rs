@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         numbers.insert(n, 1);
     }
 
-    for _ in 0..25 {
+    for _ in 0..75 {
         let mut new_numbers = HashMap::new();
         for (n, count) in numbers {
             if n == 0 {
@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         numbers = new_numbers;
     }
 
-    let mut res = 0;
+    let mut res = 0_u64;
 
     for (_, count) in numbers {
         res += count;
