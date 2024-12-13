@@ -92,7 +92,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         let mut test_pos =
                             (origin_border.0 + border_dir, origin_border.1 + border_dir);
 
-                        // println!("searching for {test_pos:?} in {borders:?}");
                         while let Some(index) = borders
                             .iter()
                             .position(|&p| p.0 == test_pos.0 && p.1 == test_pos.1)
@@ -102,7 +101,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         }
 
                         test_pos = (origin_border.0 - border_dir, origin_border.1 - border_dir);
-                        // println!("and searching for {test_pos:?} (origin: {origin_border:?})");
 
                         while let Some(index) = borders
                             .iter()
@@ -113,38 +111,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         }
 
                         border_count += 1;
-
-                        // for y in -1..map.h + 1 {
-                        //     'x_loop: for x in -1..map.w + 1 {
-                        //         for i in 0..borders.len() {
-                        //             if borders[i].1.x == x
-                        //                 && borders[i].1.y == y
-                        //                 && processed_border_indices.contains(&i)
-                        //             {
-                        //                 print!("+");
-                        //                 continue 'x_loop;
-                        //             }
-                        //         }
-                        //
-                        //         if map.at(&ivec2(x, y)) == map.at(&coord) {
-                        //             print!("{}", map.at(&coord) as char);
-                        //         } else {
-                        //             print!(".");
-                        //         }
-                        //     }
-                        //     println!();
-                        // }
-                        // println!();
-                        // println!();
                     }
                 }
-
-                //  println!(
-                //      "{} {} {}",
-                //      map.at(&coord) as char,
-                //      contiguos_set.len(),
-                //      border_count
-                //  );
 
                 res += contiguos_set.len() as i32 * border_count;
                 processed_coords.extend(contiguos_set);
