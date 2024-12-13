@@ -50,86 +50,83 @@ fn main() -> Result<(), Box<dyn Error>> {
         let button_b = i64vec2(button_b[0], button_b[1]);
         let prize = i64vec2(prize[0] + 10000000000000, prize[1] + 10000000000000);
 
+        println!("button_a {button_a}, button_b {button_b}");
+
         let extended_x = extended_euclidean_algorithm(button_a.x as i32, button_b.x as i32);
         let extended_y = extended_euclidean_algorithm(button_a.y as i32, button_b.y as i32);
 
         let gcd_x = extended_x.0 as i64;
         let gcd_y = extended_y.0 as i64;
 
-        if prize.x % gcd_x == 0 && prize.y % gcd_y == 0 {
-            let x0a_bef = extended_x.1 as i64;
-            let x0b_bef = extended_x.2 as i64;
+        let x0a = extended_x.1 as i64 * prize.x / gcd_x;
+        let x0b = extended_x.2 as i64 * prize.x / gcd_x;
 
-            let x0a = x0a_bef * prize.x / gcd_x;
-            let x0b = x0b_bef * prize.x / gcd_x;
+        assert!(x0a * button_a.x + x0b * button_b.x == prize.x);
 
-            assert!(x0a * button_a.x + x0b * button_b.x == prize.x);
+        let xa1dd = button_a.x / gcd_x;
+        let xb1dd = button_b.x / gcd_x;
 
-            println!("button_a {button_a}");
-            println!("x0a {x0a}, x0b {x0b}");
-
-            let xa1dd = button_a.x / gcd_x;
-            let xb1dd = button_b.x / gcd_x;
-
-            let mut t_x = -x0a / xb1dd;
-            assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
-            if x0a + xb1dd * t_x < 0 {
-                t_x += t_x.signum();
-            }
-            assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
-
-            println!("t_x {t_x}");
-
-            let y0a_bef = extended_y.1 as i64;
-            let y0b_bef = extended_y.2 as i64;
-
-            let y0a = y0a_bef * prize.y / gcd_y;
-            let y0b = y0b_bef * prize.y / gcd_y;
-
-            assert!(y0a * button_a.y + y0b * button_b.y == prize.y);
-
-            println!("y0a {y0a}, y0b {y0b}");
-
-            let ya1dd = button_a.y / gcd_y;
-            let yb1dd = button_b.y / gcd_y;
-
-            let mut t_y = -y0a / yb1dd;
-            assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
-            if y0a + yb1dd * t_y < 0 {
-                t_y += t_y.signum();
-            }
-            assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
-
-            println!("t_y {t_y}");
-
-            assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
-            assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
-
-            println!("A = {}", x0a + xb1dd * t_x); // 1
-            println!("A = {}", y0a + yb1dd * t_y); // 2
-            println!("B = {}", x0b - xa1dd * t_x); // 3
-            println!("B = {}", y0b - ya1dd * t_y); // 4
-
-            // x0a + xb1dd * t_x = y0a + yb1dd * t_y
-            // t_x = (y0a + yb1dd * t_y - x0a) / xb1dd
-            // x0b - xa1dd * t_x = y0b - ya1dd * t_y
-            // x0b - xa1dd * ((y0a + yb1dd * t_y - x0a) / xb1dd) = y0b - ya1dd * t_y
-            // x0b - xa1dd / xb1dd * y0a + xa1dd / xb1dd * yb1dd * t_y - xa1dd / xb1dd * x0a = y0b - ya1dd * t_y
-            // x0b - xa1dd / xb1dd * y0a - xa1dd / xb1dd * x0a = y0b - ya1dd * t_y - xa1dd / xb1dd * yb1dd * t_y
-            // x0b - xa1dd / xb1dd * y0a - xa1dd / xb1dd * x0a = y0b - t_y * (ya1dd + xa1dd / xb1dd * yb1dd)
-            // - t_y * (ya1dd + xa1dd / xb1dd * yb1dd) = x0b - xa1dd / xb1dd * y0a - xa1dd / xb1dd * x0a - y0b
-            // t_y = - (x0b - xa1dd / xb1dd * y0a - xa1dd / xb1dd * x0a - y0b) / (ya1dd + xa1dd / xb1dd * yb1dd)
-
-            let  t_y = - (x0b - xa1dd / xb1dd * y0a - xa1dd / xb1dd * x0a - y0b) / (ya1dd + xa1dd / xb1dd * yb1dd);
-            let t_x = (y0a + yb1dd * t_y - x0a) / xb1dd;
-
-            println!("A = {}", x0a + xb1dd * t_x); // 1
-            println!("A = {}", y0a + yb1dd * t_y); // 2
-            println!("B = {}", x0b - xa1dd * t_x); // 3
-            println!("B = {}", y0b - ya1dd * t_y); // 4
-
-            println!();
+        let mut t_x = -x0a / xb1dd;
+        assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
+        if x0a + xb1dd * t_x < 0 {
+            t_x += t_x.signum();
         }
+        assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
+
+        println!("t_x {t_x}");
+
+        let y0a = extended_y.1 as i64 * prize.y / gcd_y;
+        let y0b = extended_y.2 as i64 * prize.y / gcd_y;
+
+        assert!(y0a * button_a.y + y0b * button_b.y == prize.y);
+
+        let ya1dd = button_a.y / gcd_y;
+        let yb1dd = button_b.y / gcd_y;
+
+        let mut t_y = -y0a / yb1dd;
+        assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
+        if y0a + yb1dd * t_y < 0 {
+            t_y += t_y.signum();
+        }
+        assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
+
+        println!("t_y {t_y}");
+
+        assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
+        assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
+
+        // x0a + xb1dd * t_x = y0a + yb1dd * t_y
+        // xb1dd * t_x = y0a + yb1dd * t_y - x0a
+        // t_x = (y0a + yb1dd * t_y - x0a) / xb1dd
+        // t_x = y0a / xb1dd + yb1dd * t_y / xb1dd - x0a / xb1dd
+
+        // x0b - xa1dd * t_x = y0b - ya1dd * t_y
+        // x0b - xa1dd * (y0a / xb1dd + yb1dd * t_y / xb1dd - x0a / xb1dd) = y0b - ya1dd * t_y
+        // x0b - xa1dd * y0a / xb1dd - xa1dd * yb1dd * t_y / xb1dd + xa1dd * x0a / xb1dd = y0b - ya1dd * t_y
+        // x0b - xa1dd * y0a / xb1dd + xa1dd * x0a / xb1dd = y0b - ya1dd * t_y + xa1dd * yb1dd * t_y / xb1dd
+        // x0b - xa1dd * y0a / xb1dd + xa1dd * x0a / xb1dd - y0b = xa1dd * yb1dd * t_y / xb1dd - ya1dd * t_y
+        // x0b - xa1dd * y0a / xb1dd + xa1dd * x0a / xb1dd - y0b = t_y * (xa1dd * yb1dd / xb1dd - ya1dd)
+        // (x0b - xa1dd * y0a / xb1dd + xa1dd * x0a / xb1dd - y0b) / (xa1dd * yb1dd / xb1dd - ya1dd) = t_y
+        // (x0b + (xa1dd * x0a - xa1dd * y0a) / xb1dd - y0b) / (xa1dd * yb1dd / xb1dd - ya1dd) = t_y
+
+        println!("xb1dd {xb1dd}");
+        println!("xa1dd {xa1dd}");
+        println!("yb1dd {yb1dd}");
+
+        let t_y =
+            ((x0b as f64 + (xa1dd as f64 * x0a as f64 - xa1dd as f64 * y0a as f64) / xb1dd as f64 - y0b as f64) / (xa1dd as f64 * yb1dd as f64 / xb1dd as f64 - ya1dd as f64)) as i64;
+        let t_x = y0a / xb1dd + yb1dd * t_y / xb1dd - x0a / xb1dd;
+
+        println!("t_y {t_y}");
+        println!("t_x {t_x}");
+
+        assert!((x0a + xb1dd * t_x) * button_a.x + (x0b - xa1dd * t_x) * button_b.x == prize.x);
+        assert!((y0a + yb1dd * t_y) * button_a.y + (y0b - ya1dd * t_y) * button_b.y == prize.y);
+
+        println!("A {} {}", (x0a + xb1dd * t_x), (y0a + yb1dd * t_y));
+        println!("B {} {}", (x0b - xa1dd * t_x), (y0b - ya1dd * t_y));
+
+        println!();
     }
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
