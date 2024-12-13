@@ -28,22 +28,33 @@ fn main() -> Result<(), Box<dyn Error>> {
         let button_b = uvec2(button_b[0], button_b[1]);
         let prize = uvec2(prize[0], prize[1]);
 
-        let mut b_pushes = prize.x / button_b.x;
-        let mut a_pushes = 0;
-        loop {
-            let curr_val = a_pushes * button_a + b_pushes * button_b;
-            if curr_val == prize {
-                res += 3 * a_pushes + b_pushes;
-                break;
-            } else if curr_val.x < prize.x && curr_val.y < prize.y {
-                a_pushes += 1;
-            } else if b_pushes == 0 {
-                break;
-            } else {
-                b_pushes -= 1;
+        let gcd_x = gcd::binary_u32(button_a.x, button_b.x);
+        let gcd_y = gcd::binary_u32(button_a.y, button_b.y);
+
+       // if prize.x & gcd_x == 0 && prize.y & gcd_y == 0 {
+            let mut b_pushes = prize.x / button_b.x;
+            let mut a_pushes = 0;
+            loop {
+                let curr_val = a_pushes * button_a + b_pushes * button_b;
+                if curr_val == prize {
+                    // println!("{button_a} => {a_pushes} A + {b_pushes} B");
+                    res += 3 * a_pushes + b_pushes;
+                    break;
+                } else if curr_val.x < prize.x && curr_val.y < prize.y {
+                    a_pushes += 1;
+                   // if a_pushes > 100 {
+                   //     break;
+                   // }
+                } else if b_pushes == 0 {
+                    break;
+                } else {
+                    b_pushes -= 1;
+                }
             }
-        }
+       // }
     }
+
+    // 9636 too low
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
 
