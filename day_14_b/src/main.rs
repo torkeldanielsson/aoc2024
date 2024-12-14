@@ -1,3 +1,4 @@
+use rustc_hash::FxHashSet;
 use std::{error::Error, time::Instant};
 
 use glam::{ivec2, IVec2};
@@ -18,9 +19,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let tim = Instant::now();
 
     let input = include_str!("../input");
-
-    let w = 101;
-    let h = 103;
 
     let mut robots = Vec::new();
 
@@ -47,14 +45,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     'test_loop: loop {
         t += 1;
 
-        let mut positions = Vec::new();
+        let mut positions = FxHashSet::default();
 
         for robot in &robots {
             let pos = robot.pos_after_t(t);
             if positions.contains(&pos) {
                 continue 'test_loop;
             } else {
-                positions.push(pos);
+                positions.insert(pos);
             }
         }
 
