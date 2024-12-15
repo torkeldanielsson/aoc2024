@@ -18,9 +18,9 @@ impl Map {
     }
 
     fn at(&self, coord: &IVec2) -> char {
-        if coord.x < 0 || coord.x > self.w || coord.y < 0 || coord.y > self.h {
-            return 'F';
-        }
+        // if coord.x < 0 || coord.x > self.w || coord.y < 0 || coord.y > self.h {
+        //     return 'F';
+        // }
         self.data[(coord.y * (self.w) + coord.x) as usize]
     }
 
@@ -29,31 +29,40 @@ impl Map {
     }
 }
 
-fn maybe_push(pushed_map: &mut Map, dir: IVec2, pos: IVec2) -> bool {
-    match pushed_map.at(&pos) {
+fn maybe_push(pushed_map: &mut Map, dir: &IVec2, pos: &IVec2) -> bool {
+    match pushed_map.at(pos) {
         '.' => return true,
         '#' => return false,
         _ => {}
     }
 
-    // [ or ]
-    let (left, right) = match pushed_map.at(&pos) {
-        '[' => (pos, pos + ivec2(1, 0)),
-        ']' => (pos + ivec2(-1, 0), pos),
+    let (left, right) = match pushed_map.at(pos) {
+        '[' => (*pos, *pos + ivec2(1, 0)),
+        ']' => (*pos + ivec2(-1, 0), *pos),
         _ => panic!(),
     };
 
-    if dir.x == -1 && maybe_push(pushed_map, dir, left + dir) {
-        pushed_map.set(&(left + dir), '[');
-        pushed_map.set(&(right + dir), ']');
-        pushed_map.set(&right, '.');
-        return true;
-    } else if dir.x == 1 && maybe_push(pushed_map, dir, right + dir) {
-        pushed_map.set(&(left + dir), '[');
-        pushed_map.set(&(right + dir), ']');
-        pushed_map.set(&left, '.');
-        return true;
-    } else if maybe_push(pushed_map, dir, left + dir) && maybe_push(pushed_map, dir, right + dir) {
+    if dir.x == -1 {
+        if maybe_push(pushed_map, dir, &(left + dir)) {
+            pushed_map.set(&(left + dir), '[');
+            pushed_map.set(&(right + dir), ']');
+            pushed_map.set(&right, '.');
+            return true;
+        } else {
+            return false;
+        }
+    } else if dir.x == 1 {
+        if maybe_push(pushed_map, dir, &(right + dir)) {
+            pushed_map.set(&(left + dir), '[');
+            pushed_map.set(&(right + dir), ']');
+            pushed_map.set(&left, '.');
+            return true;
+        } else {
+            return false;
+        }
+    } else if maybe_push(pushed_map, dir, &(left + dir))
+        && maybe_push(pushed_map, dir, &(right + dir))
+    {
         pushed_map.set(&(left + dir), '[');
         pushed_map.set(&(right + dir), ']');
         pushed_map.set(&left, '.');
@@ -66,7 +75,7 @@ fn maybe_push(pushed_map: &mut Map, dir: IVec2, pos: IVec2) -> bool {
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input: Vec<&str> = include_str!("../test2").split("\n\n").collect();
+    let input: Vec<&str> = include_str!("../input").split("\n\n").collect();
 
     let mut map = Vec::new();
     let mut pos = ivec2(0, 0);
@@ -95,6 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut map_a = Map::new(map, map_max.x + 2, map_max.y + 1);
     let mut map_b = Map::new(map_a.data.clone(), map_max.x + 2, map_max.y + 1);
 
+    /*
     for y in 0..map_a.h {
         for x in 0..map_a.w {
             let p = ivec2(x, y);
@@ -108,6 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     println!();
     println!();
+    */
 
     for c in input[1].lines().flat_map(|line| line.chars()) {
         let dir = match c {
@@ -120,13 +131,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let maybe_pos = pos + dir;
 
-        map_b.clone_from(&map_a.data);
-
-        if maybe_push(&mut map_b, dir, maybe_pos) {
+        if maybe_push(&mut map_b, &dir, &maybe_pos) {
             pos = maybe_pos;
             map_a.clone_from(&map_b.data);
+        } else {
+            map_b.clone_from(&map_a.data);
         }
 
+        /*
         for y in 0..map_a.h {
             for x in 0..map_a.w {
                 let p = ivec2(x, y);
@@ -140,15 +152,20 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         println!();
         println!();
+        */
     }
 
-    // let mut res = 0;
+    let mut res = 0;
 
-    // for o in boxes {
-    //     res += 100 * o.y + o.x;
-    // }
+    for y in 0..map_a.h {
+        for x in 0..map_a.w {
+            if map_a.at(&ivec2(x, y)) == '[' {
+                res += 100 * y + x;
+            }
+        }
+    }
 
-    // println!("res: {res}, {} us", t.elapsed().as_micros());
+    println!("res: {res}, {} us", t.elapsed().as_micros());
 
     Ok(())
 }
