@@ -69,42 +69,95 @@ fn fill(
     }
 }
 
-fn count_besties(pos: IVec2, cost: i32, moves: &FxHashMap<IVec2, i32>, besties: &mut Vec<IVec2>) {
-    besties.push(pos);
+#[allow(clippy::too_many_arguments)]
+fn fill2(
+    pos: IVec2,
+    dir: IVec2,
+    cost: i32,
+    moves: &mut FxHashMap<IVec2, i32>,
+    obstacles: &FxHashSet<IVec2>,
+    unique_moves: Vec<IVec2>,
+    besties: &mut FxHashSet<IVec2>,
+    goal: IVec2,
+    goal_target_cost: i32,
+) {
+    if cost > goal_target_cost {
+        return;
+    }
 
-    // if *bestie_count > 30 {
-    //     return;
-    // }
-
-    let mut lowest_cost = cost;
-    let mut bestie_neighbors = Vec::new();
-    for neighbor in &[ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1)] {
-        if let Some(&maybe_best_neighbor_cost) = moves.get(&(pos + neighbor)) {
-            match maybe_best_neighbor_cost.cmp(&lowest_cost) {
-                std::cmp::Ordering::Less => {
-                    lowest_cost = maybe_best_neighbor_cost;
-                    bestie_neighbors.clear();
-                    bestie_neighbors.push(pos + neighbor);
-                }
-                std::cmp::Ordering::Equal => {
-                    bestie_neighbors.push(pos + neighbor);
-                }
-                std::cmp::Ordering::Greater => {}
-            }
+    if pos == goal && cost == goal_target_cost {
+        for b in &unique_moves {
+            besties.insert(*b);
         }
     }
 
-    println!("pos {pos}, cost {cost}, bestie_neighbors: {bestie_neighbors:?}");
+    {
+        let forward_pos = pos + dir;
+        if !obstacles.contains(&forward_pos) && !unique_moves.contains(&forward_pos) {
+            moves.insert(forward_pos, cost + 1);
+            let mut new_unique = unique_moves.clone();
+            new_unique.push(forward_pos);
+            fill2(
+                forward_pos,
+                dir,
+                cost + 1,
+                moves,
+                obstacles,
+                new_unique,
+                besties,
+                goal,
+                goal_target_cost,
+            );
+        }
+    }
 
-    for bestie_neighbor in bestie_neighbors {
-        count_besties(bestie_neighbor, lowest_cost, moves, besties);
+    {
+        let left_dir = turn_left(dir);
+        let left_pos = pos + left_dir;
+        if !obstacles.contains(&left_pos) && !unique_moves.contains(&left_pos) {
+            moves.insert(left_pos, cost + 1001);
+            let mut new_unique = unique_moves.clone();
+            new_unique.push(left_pos);
+            fill2(
+                left_pos,
+                left_dir,
+                cost + 1001,
+                moves,
+                obstacles,
+                new_unique,
+                besties,
+                goal,
+                goal_target_cost,
+            );
+        }
+    }
+
+    {
+        let right_dir = turn_right(dir);
+        let right_pos = pos + right_dir;
+        if !obstacles.contains(&right_pos) && !unique_moves.contains(&right_pos) {
+            moves.insert(right_pos, cost + 1001);
+            let mut new_unique = unique_moves.clone();
+            new_unique.push(right_pos);
+            fill2(
+                right_pos,
+                right_dir,
+                cost + 1001,
+                moves,
+                obstacles,
+                new_unique,
+                besties,
+                goal,
+                goal_target_cost,
+            );
+        }
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test1");
+    let input = include_str!("../input");
     let mut obstacles = FxHashSet::default();
     let mut start = ivec2(0, 0);
     let mut goal = ivec2(0, 0);
@@ -131,8 +184,23 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     fill(start, ivec2(1, 0), 0, &mut moves, &obstacles);
 
-    let mut besties = Vec::new();
-    count_besties(goal, moves[&goal], &moves, &mut besties);
+    let mut besties = FxHashSet::default();
+    besties.insert(start);
+
+    let mut moves2 = FxHashMap::default();
+    moves2.insert(start, 0);
+
+    fill2(
+        start,
+        ivec2(1, 0),
+        0,
+        &mut moves2,
+        &obstacles,
+        Vec::new(),
+        &mut besties,
+        goal,
+        moves[&goal],
+    );
 
     for y in 0..=max_map.y {
         for x in 0..=max_map.x {
@@ -149,15 +217,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     println!("res: {}, {} us", besties.len(), t.elapsed().as_micros());
-
-    let p = ivec2(1,10);
-    println!("{p}: {}", moves[&p]);
-    let p = ivec2(2,11);
-    println!("{p}: {}", moves[&p]);
-    let p = ivec2(1,10);
-    println!("{p}: {}", moves[&p]);
-    let p = ivec2(1,10);
-    println!("{p}: {}", moves[&p]);
 
     Ok(())
 }
