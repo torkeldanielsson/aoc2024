@@ -1,73 +1,8 @@
 use std::{error::Error, time::Instant};
 
 use glam::{ivec2, IVec2};
-use rustc_hash::{FxHashMap, FxHashSet};
-
-fn turn_left(dir: IVec2) -> IVec2 {
-    if dir.x == -1 {
-        return ivec2(0, 1);
-    }
-    if dir.x == 1 {
-        return ivec2(0, -1);
-    }
-    if dir.y == -1 {
-        return ivec2(-1, 0);
-    }
-    if dir.y == 1 {
-        return ivec2(1, 0);
-    }
-    panic!()
-}
-
-fn turn_right(dir: IVec2) -> IVec2 {
-    if dir.x == -1 {
-        return ivec2(0, -1);
-    }
-    if dir.x == 1 {
-        return ivec2(0, 1);
-    }
-    if dir.y == -1 {
-        return ivec2(1, 0);
-    }
-    if dir.y == 1 {
-        return ivec2(-1, 0);
-    }
-    panic!()
-}
-
-fn fill(
-    pos: IVec2,
-    dir: IVec2,
-    cost: i32,
-    moves: &mut FxHashMap<IVec2, i32>,
-    obstacles: &FxHashSet<IVec2>,
-) {
-    let forward_pos = pos + dir;
-    if !obstacles.contains(&forward_pos)
-        && (!moves.contains_key(&forward_pos) || moves[&forward_pos] > cost + 1)
-    {
-        moves.insert(forward_pos, cost + 1);
-        fill(forward_pos, dir, cost + 1, moves, obstacles);
-    }
-
-    let left_dir = turn_left(dir);
-    let left_pos = pos + left_dir;
-    if !obstacles.contains(&left_pos)
-        && (!moves.contains_key(&left_pos) || moves[&left_pos] > cost + 1001)
-    {
-        moves.insert(left_pos, cost + 1001);
-        fill(left_pos, left_dir, cost + 1001, moves, obstacles);
-    }
-
-    let right_dir = turn_right(dir);
-    let right_pos = pos + right_dir;
-    if !obstacles.contains(&right_pos)
-        && (!moves.contains_key(&right_pos) || moves[&right_pos] > cost + 1001)
-    {
-        moves.insert(right_pos, cost + 1001);
-        fill(right_pos, right_dir, cost + 1001, moves, obstacles);
-    }
-}
+use pathfinding::prelude::dijkstra;
+use rustc_hash::FxHashSet;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
@@ -76,6 +11,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut obstacles = FxHashSet::default();
     let mut start = ivec2(0, 0);
     let mut goal = ivec2(0, 0);
+
+    let mut max_map = ivec2(0, 0);
 
     for (y, line) in input.lines().enumerate() {
         for (x, c) in line.chars().enumerate() {
@@ -87,14 +24,58 @@ fn main() -> Result<(), Box<dyn Error>> {
                 'E' => goal = ivec2(x as i32, y as i32),
                 _ => {}
             }
+            max_map.x = max_map.x.max(x as i32);
         }
+        max_map.y = max_map.y.max(y as i32);
     }
 
-    let mut moves = FxHashMap::default();
+    let dijkstra_res = dijkstra(
+        &(start, ivec2(1, 0)),
+        |p| {
+            let mut successors: Vec<((IVec2, IVec2), usize)> = Vec::new();
 
-    fill(start, ivec2(1, 0), 0, &mut moves, &obstacles);
+            let forward = (p.0 + p.1, p.1);
+            if !obstacles.contains(&forward.0) {
+                successors.push((forward, 1));
+            }
 
-    println!("res: {}, {} us", moves[&goal], t.elapsed().as_micros());
+            let left_dir = if p.1.x == 0 {
+                ivec2(p.1.y, 0)
+            } else {
+                ivec2(0, -p.1.x)
+            };
+
+            let left = (p.0 + left_dir, left_dir);
+            let right = (p.0 - left_dir, -left_dir);
+
+            if !obstacles.contains(&left.0) {
+                successors.push((left, 1001));
+            }
+            if !obstacles.contains(&right.0) {
+                successors.push((right, 1001));
+            }
+
+            successors
+        },
+        |p| p.0 == goal,
+    )
+    .unwrap();
+
+    println!("res: {}, {} us", dijkstra_res.1, t.elapsed().as_micros());
+
+    // for y in 0..=max_map.y {
+    //     for x in 0..=max_map.x {
+    //         let p = ivec2(x, y);
+    //         if obstacles.contains(&p) {
+    //             print!("#")
+    //         } else if besties.contains(&p) {
+    //             print!("O")
+    //         } else {
+    //             print!(".")
+    //         }
+    //     }
+    //     println!()
+    // }
 
     Ok(())
 }
