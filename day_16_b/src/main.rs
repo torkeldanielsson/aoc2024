@@ -91,73 +91,73 @@ fn fill2(
         }
     }
 
+    let forward_pos = pos + dir;
+    if !obstacles.contains(&forward_pos)
+        && (!moves.contains_key(&forward_pos) || moves[&forward_pos] >= cost + 1)
     {
-        let forward_pos = pos + dir;
-        if !obstacles.contains(&forward_pos) && !unique_moves.contains(&forward_pos) {
-            moves.insert(forward_pos, cost + 1);
-            let mut new_unique = unique_moves.clone();
-            new_unique.push(forward_pos);
-            fill2(
-                forward_pos,
-                dir,
-                cost + 1,
-                moves,
-                obstacles,
-                new_unique,
-                besties,
-                goal,
-                goal_target_cost,
-            );
-        }
+        moves.insert(forward_pos, cost + 1);
+        let mut new_unique = unique_moves.clone();
+        new_unique.push(forward_pos);
+        fill2(
+            forward_pos,
+            dir,
+            cost + 1,
+            moves,
+            obstacles,
+            new_unique,
+            besties,
+            goal,
+            goal_target_cost,
+        );
     }
 
+    let left_dir = turn_left(dir);
+    let left_pos = pos + left_dir;
+    if !obstacles.contains(&left_pos)
+        && (!moves.contains_key(&left_pos) || moves[&left_pos] >= cost + 1001)
     {
-        let left_dir = turn_left(dir);
-        let left_pos = pos + left_dir;
-        if !obstacles.contains(&left_pos) && !unique_moves.contains(&left_pos) {
-            moves.insert(left_pos, cost + 1001);
-            let mut new_unique = unique_moves.clone();
-            new_unique.push(left_pos);
-            fill2(
-                left_pos,
-                left_dir,
-                cost + 1001,
-                moves,
-                obstacles,
-                new_unique,
-                besties,
-                goal,
-                goal_target_cost,
-            );
-        }
+        moves.insert(left_pos, cost + 1001);
+        let mut new_unique = unique_moves.clone();
+        new_unique.push(left_pos);
+        fill2(
+            left_pos,
+            left_dir,
+            cost + 1001,
+            moves,
+            obstacles,
+            new_unique,
+            besties,
+            goal,
+            goal_target_cost,
+        );
     }
 
+    let right_dir = turn_right(dir);
+    let right_pos = pos + right_dir;
+    if !obstacles.contains(&right_pos)
+        && (!moves.contains_key(&right_pos) || moves[&right_pos] >= cost + 1001)
     {
-        let right_dir = turn_right(dir);
-        let right_pos = pos + right_dir;
-        if !obstacles.contains(&right_pos) && !unique_moves.contains(&right_pos) {
-            moves.insert(right_pos, cost + 1001);
-            let mut new_unique = unique_moves.clone();
-            new_unique.push(right_pos);
-            fill2(
-                right_pos,
-                right_dir,
-                cost + 1001,
-                moves,
-                obstacles,
-                new_unique,
-                besties,
-                goal,
-                goal_target_cost,
-            );
-        }
+        moves.insert(right_pos, cost + 1001);
+        let mut new_unique = unique_moves.clone();
+        new_unique.push(right_pos);
+        fill2(
+            right_pos,
+            right_dir,
+            cost + 1001,
+            moves,
+            obstacles,
+            new_unique,
+            besties,
+            goal,
+            goal_target_cost,
+        );
     }
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../input");
+    let input = include_str!("../test3");
     let mut obstacles = FxHashSet::default();
     let mut start = ivec2(0, 0);
     let mut goal = ivec2(0, 0);
