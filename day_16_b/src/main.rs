@@ -41,13 +41,18 @@ fn fill(
     cost: i32,
     moves: &mut FxHashMap<IVec2, i32>,
     obstacles: &FxHashSet<IVec2>,
+    goal: IVec2,
 ) {
+    if pos == goal {
+        return;
+    }
+
     let forward_pos = pos + dir;
     if !obstacles.contains(&forward_pos)
         && (!moves.contains_key(&forward_pos) || moves[&forward_pos] > cost + 1)
     {
         moves.insert(forward_pos, cost + 1);
-        fill(forward_pos, dir, cost + 1, moves, obstacles);
+        fill(forward_pos, dir, cost + 1, moves, obstacles, goal);
     }
 
     let left_dir = turn_left(dir);
@@ -56,7 +61,7 @@ fn fill(
         && (!moves.contains_key(&left_pos) || moves[&left_pos] > cost + 1001)
     {
         moves.insert(left_pos, cost + 1001);
-        fill(left_pos, left_dir, cost + 1001, moves, obstacles);
+        fill(left_pos, left_dir, cost + 1001, moves, obstacles, goal);
     }
 
     let right_dir = turn_right(dir);
@@ -65,7 +70,7 @@ fn fill(
         && (!moves.contains_key(&right_pos) || moves[&right_pos] > cost + 1001)
     {
         moves.insert(right_pos, cost + 1001);
-        fill(right_pos, right_dir, cost + 1001, moves, obstacles);
+        fill(right_pos, right_dir, cost + 1001, moves, obstacles, goal);
     }
 }
 
@@ -95,6 +100,7 @@ fn fill2(
     if !obstacles.contains(&forward_pos)
         && (!moves.contains_key(&forward_pos) || moves[&forward_pos] >= cost + 1)
     {
+        moves.insert(pos, cost + 1000);
         moves.insert(forward_pos, cost + 1);
         let mut new_unique = unique_moves.clone();
         new_unique.push(forward_pos);
@@ -117,6 +123,7 @@ fn fill2(
         && (!moves.contains_key(&left_pos) || moves[&left_pos] >= cost + 1001)
     {
         moves.insert(left_pos, cost + 1001);
+        moves.insert(pos, cost + 1000);
         let mut new_unique = unique_moves.clone();
         new_unique.push(left_pos);
         fill2(
@@ -157,7 +164,7 @@ fn fill2(
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test3");
+    let input = include_str!("../input");
     let mut obstacles = FxHashSet::default();
     let mut start = ivec2(0, 0);
     let mut goal = ivec2(0, 0);
@@ -182,7 +189,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut moves = FxHashMap::default();
     moves.insert(start, 0);
 
-    fill(start, ivec2(1, 0), 0, &mut moves, &obstacles);
+    fill(start, ivec2(1, 0), 0, &mut moves, &obstacles, goal);
+
+    // println!("A res: {}", moves[&goal]);
 
     let mut besties = FxHashSet::default();
     besties.insert(start);
@@ -202,19 +211,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         moves[&goal],
     );
 
-    for y in 0..=max_map.y {
-        for x in 0..=max_map.x {
-            let p = ivec2(x, y);
-            if obstacles.contains(&p) {
-                print!("#")
-            } else if besties.contains(&p) {
-                print!("O")
-            } else {
-                print!(".")
-            }
-        }
-        println!()
-    }
+    // for y in 0..=max_map.y {
+    //     for x in 0..=max_map.x {
+    //         let p = ivec2(x, y);
+    //         if obstacles.contains(&p) {
+    //             print!("#")
+    //         } else if besties.contains(&p) {
+    //             print!("O")
+    //         } else {
+    //             print!(".")
+    //         }
+    //     }
+    //     println!()
+    // }
 
     println!("res: {}, {} us", besties.len(), t.elapsed().as_micros());
 
