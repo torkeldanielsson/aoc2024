@@ -25,7 +25,7 @@ impl PartialOrd for Pos {
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test3");
+    let input = include_str!("../input");
     let mut obstacles = FxHashSet::default();
     let mut start = ivec2(0, 0);
     let mut goal = ivec2(0, 0);
@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut visited = FxHashMap::default();
-    visited.insert(start, 0);
+    visited.insert((start, ivec2(1, 0)), 0);
 
     let mut unvisited = BinaryHeap::new();
 
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     while let Some(p) = unvisited.pop() {
-        let mut neighbors: Vec<((IVec2, IVec2), usize)> = Vec::new();
+        let mut neighbors: Vec<((IVec2, IVec2), i32)> = Vec::new();
 
         let forward = (p.pos + p.dir, p.dir);
         if !obstacles.contains(&forward.0) {
@@ -82,10 +82,43 @@ fn main() -> Result<(), Box<dyn Error>> {
             neighbors.push((right, 1001));
         }
 
-        
+        for ((npos, ndir), move_cost) in neighbors {
+            let new_cost = p.cost + move_cost;
+            match visited.entry((npos, ndir)) {
+                std::collections::hash_map::Entry::Occupied(occupied_entry) => {
+                    if *occupied_entry.get() > new_cost {
+                        visited.insert((npos, ndir), new_cost);
+                    } else {
+                        continue;
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(_vacant_entry) => {
+                    visited.insert((npos, ndir), new_cost);
+                }
+            }
+            unvisited.push(Pos {
+                cost: new_cost,
+                pos: npos,
+                dir: ndir,
+            });
+        }
     }
 
-    println!("A res: {}, {} us", moves[&goal], t.elapsed().as_micros());
+    let mut res_1 = i32::MAX;
+    if let Some(r) = visited.get(&(goal, ivec2(1, 0))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(-1, 0))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, 1))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, -1))) {
+        res_1 = res_1.min(*r);
+    }
+
+    println!("A res: {res_1}, {} us", t.elapsed().as_micros());
 
     // for y in 0..=max_map.y {
     //     for x in 0..=max_map.x {
