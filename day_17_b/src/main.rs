@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let input: Vec<&str> = include_str!("../input").split("\n\n").collect();
 
-    let (mut reg_a, reg_b, reg_c) = {
+    let (_reg_a, reg_b, reg_c) = {
         let regs: Vec<u64> = input[0]
             .lines()
             .map(|l| l[12..].parse::<u64>().unwrap())
@@ -89,50 +89,43 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|n| n.trim_ascii().parse::<u64>().unwrap())
         .collect();
 
-    let mut res = compute(&prog, reg_a, reg_b, reg_c);
+    let mut res = 0;
 
-    let mut a_val = reg_a;
+    let mut i = 0;
 
-    while res.len() < prog.len() {
-        a_val = (a_val as f32 * 1.1) as u64;
-        reg_a = a_val;
-        res = compute(&prog, reg_a, reg_b, reg_c);
-    }
-
-    let mut diff_val = (a_val as f32 * 0.0001) as u64;
-
-    for i in 0..prog.len() - 1 {
-        let limit = prog.len() - 1 - i;
-
-        diff_val = (diff_val as f32 / 4.0) as u64;
-
-        while res[limit..] != prog[limit..] {
-            if res.len() > prog.len() {
-                println!("div!");
-                a_val /= 1000;
-            }
-            a_val += diff_val;
-            reg_a = a_val;
-            res = compute(&prog, reg_a, reg_b, reg_c);
-            // println!(
-            //     "{limit} {a_val} => res: {res:?}, {} us",
-            //     t.elapsed().as_micros()
-            // );
+    'outer: loop {
+        i += 1;
+        if i > prog.len() {
+            break;
         }
 
-        // println!(
-        //     "{limit} reached {a_val} => res: {res:?}, {} us",
-        //     t.elapsed().as_micros()
-        // );
+        let mut j = 0;
+
+        loop {
+            let tmp_res = res | (j << ((prog.len() - i) * 3));
+            let rpg = compute(&prog, tmp_res, reg_b, reg_c);
+
+            if prog.len() != rpg.len() {
+                j += 1;
+                continue;
+            }
+
+            if prog[prog.len() - i..] == rpg[prog.len() - i..] {
+                res = tmp_res;
+                continue 'outer;
+            }
+
+            j += 1;
+
+            if j > 7 {
+                i -= 1;
+                res += 1 << ((prog.len() - i) * 3);
+                continue 'outer;
+            }
+        }
     }
 
-    while res != prog {
-        a_val += 1;
-        reg_a = a_val;
-        res = compute(&prog, reg_a, reg_b, reg_c);
-    }
-
-    println!("res: {a_val}, {} us", t.elapsed().as_micros());
+    println!("res: {}, {} us", res, t.elapsed().as_micros());
 
     Ok(())
 }
