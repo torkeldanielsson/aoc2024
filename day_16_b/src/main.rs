@@ -1,163 +1,24 @@
-use std::{error::Error, time::Instant};
+use std::{collections::BinaryHeap, error::Error, time::Instant};
 
 use glam::{ivec2, IVec2};
 use rustc_hash::{FxHashMap, FxHashSet};
 
-fn turn_left(dir: IVec2) -> IVec2 {
-    if dir.x == -1 {
-        return ivec2(0, 1);
-    }
-    if dir.x == 1 {
-        return ivec2(0, -1);
-    }
-    if dir.y == -1 {
-        return ivec2(-1, 0);
-    }
-    if dir.y == 1 {
-        return ivec2(1, 0);
-    }
-    panic!()
-}
-
-fn turn_right(dir: IVec2) -> IVec2 {
-    if dir.x == -1 {
-        return ivec2(0, -1);
-    }
-    if dir.x == 1 {
-        return ivec2(0, 1);
-    }
-    if dir.y == -1 {
-        return ivec2(1, 0);
-    }
-    if dir.y == 1 {
-        return ivec2(-1, 0);
-    }
-    panic!()
-}
-
-fn fill(
+#[derive(Eq, PartialEq)]
+struct Pos {
+    cost: i32,
     pos: IVec2,
     dir: IVec2,
-    cost: i32,
-    moves: &mut FxHashMap<IVec2, i32>,
-    obstacles: &FxHashSet<IVec2>,
-    goal: IVec2,
-) {
-    if pos == goal {
-        return;
-    }
+}
 
-    let forward_pos = pos + dir;
-    if !obstacles.contains(&forward_pos)
-        && (!moves.contains_key(&forward_pos) || moves[&forward_pos] > cost + 1)
-    {
-        moves.insert(forward_pos, cost + 1);
-        fill(forward_pos, dir, cost + 1, moves, obstacles, goal);
-    }
-
-    let left_dir = turn_left(dir);
-    let left_pos = pos + left_dir;
-    if !obstacles.contains(&left_pos)
-        && (!moves.contains_key(&left_pos) || moves[&left_pos] > cost + 1001)
-    {
-        moves.insert(left_pos, cost + 1001);
-        fill(left_pos, left_dir, cost + 1001, moves, obstacles, goal);
-    }
-
-    let right_dir = turn_right(dir);
-    let right_pos = pos + right_dir;
-    if !obstacles.contains(&right_pos)
-        && (!moves.contains_key(&right_pos) || moves[&right_pos] > cost + 1001)
-    {
-        moves.insert(right_pos, cost + 1001);
-        fill(right_pos, right_dir, cost + 1001, moves, obstacles, goal);
+impl Ord for Pos {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.cost.cmp(&self.cost)
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn fill2(
-    pos: IVec2,
-    dir: IVec2,
-    cost: i32,
-    moves: &mut FxHashMap<IVec2, i32>,
-    obstacles: &FxHashSet<IVec2>,
-    unique_moves: Vec<IVec2>,
-    besties: &mut FxHashSet<IVec2>,
-    goal: IVec2,
-    goal_target_cost: i32,
-) {
-    if cost > goal_target_cost {
-        return;
-    }
-
-    if pos == goal && cost == goal_target_cost {
-        for b in &unique_moves {
-            besties.insert(*b);
-        }
-    }
-
-    let forward_pos = pos + dir;
-    if !obstacles.contains(&forward_pos)
-        && (!moves.contains_key(&forward_pos) || moves[&forward_pos] >= cost + 1)
-    {
-        moves.insert(pos, cost + 1000);
-        moves.insert(forward_pos, cost + 1);
-        let mut new_unique = unique_moves.clone();
-        new_unique.push(forward_pos);
-        fill2(
-            forward_pos,
-            dir,
-            cost + 1,
-            moves,
-            obstacles,
-            new_unique,
-            besties,
-            goal,
-            goal_target_cost,
-        );
-    }
-
-    let left_dir = turn_left(dir);
-    let left_pos = pos + left_dir;
-    if !obstacles.contains(&left_pos)
-        && (!moves.contains_key(&left_pos) || moves[&left_pos] >= cost + 1001)
-    {
-        moves.insert(left_pos, cost + 1001);
-        moves.insert(pos, cost + 1000);
-        let mut new_unique = unique_moves.clone();
-        new_unique.push(left_pos);
-        fill2(
-            left_pos,
-            left_dir,
-            cost + 1001,
-            moves,
-            obstacles,
-            new_unique,
-            besties,
-            goal,
-            goal_target_cost,
-        );
-    }
-
-    let right_dir = turn_right(dir);
-    let right_pos = pos + right_dir;
-    if !obstacles.contains(&right_pos)
-        && (!moves.contains_key(&right_pos) || moves[&right_pos] >= cost + 1001)
-    {
-        moves.insert(right_pos, cost + 1001);
-        let mut new_unique = unique_moves.clone();
-        new_unique.push(right_pos);
-        fill2(
-            right_pos,
-            right_dir,
-            cost + 1001,
-            moves,
-            obstacles,
-            new_unique,
-            besties,
-            goal,
-            goal_target_cost,
-        );
+impl PartialOrd for Pos {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -186,46 +47,126 @@ fn main() -> Result<(), Box<dyn Error>> {
         max_map.y = max_map.y.max(y as i32);
     }
 
-    let mut moves = FxHashMap::default();
-    moves.insert(start, 0);
+    let mut visited = FxHashMap::default();
+    visited.insert((start, ivec2(1, 0)), 0);
 
-    fill(start, ivec2(1, 0), 0, &mut moves, &obstacles, goal);
+    let mut unvisited = BinaryHeap::new();
 
-    // println!("A res: {}", moves[&goal]);
+    unvisited.push(Pos {
+        cost: 0,
+        pos: start,
+        dir: ivec2(1, 0),
+    });
 
-    let mut besties = FxHashSet::default();
-    besties.insert(start);
+    let mut parents = FxHashMap::default();
 
-    let mut moves2 = FxHashMap::default();
-    moves2.insert(start, 0);
+    while let Some(p) = unvisited.pop() {
+        let mut neighbors: Vec<((IVec2, IVec2), i32)> = Vec::new();
 
-    fill2(
-        start,
-        ivec2(1, 0),
-        0,
-        &mut moves2,
-        &obstacles,
-        Vec::new(),
-        &mut besties,
-        goal,
-        moves[&goal],
-    );
+        let forward = (p.pos + p.dir, p.dir);
+        if !obstacles.contains(&forward.0) {
+            neighbors.push((forward, 1));
+        }
 
-    // for y in 0..=max_map.y {
-    //     for x in 0..=max_map.x {
-    //         let p = ivec2(x, y);
-    //         if obstacles.contains(&p) {
-    //             print!("#")
-    //         } else if besties.contains(&p) {
-    //             print!("O")
-    //         } else {
-    //             print!(".")
-    //         }
-    //     }
-    //     println!()
-    // }
+        let left_dir = if p.dir.x == 0 {
+            ivec2(p.dir.y, 0)
+        } else {
+            ivec2(0, -p.dir.x)
+        };
 
-    println!("res: {}, {} us", besties.len(), t.elapsed().as_micros());
+        let left = (p.pos + left_dir, left_dir);
+        let right = (p.pos - left_dir, -left_dir);
+
+        if !obstacles.contains(&left.0) {
+            neighbors.push((left, 1001));
+        }
+        if !obstacles.contains(&right.0) {
+            neighbors.push((right, 1001));
+        }
+
+        for ((npos, ndir), move_cost) in neighbors {
+            let new_cost = p.cost + move_cost;
+            match visited.entry((npos, ndir)) {
+                std::collections::hash_map::Entry::Occupied(occupied_entry) => {
+                    match occupied_entry.get().cmp(&new_cost) {
+                        std::cmp::Ordering::Greater => {
+                            visited.insert((npos, ndir), new_cost);
+                            parents.insert((npos, ndir), vec![(p.pos, p.dir)]);
+                        }
+                        std::cmp::Ordering::Equal => {
+                            parents
+                                .entry((npos, ndir))
+                                .and_modify(|parent_list| parent_list.push((p.pos, p.dir)));
+                            continue;
+                        }
+                        std::cmp::Ordering::Less => continue,
+                    }
+                }
+                std::collections::hash_map::Entry::Vacant(_vacant_entry) => {
+                    visited.insert((npos, ndir), new_cost);
+                    parents.insert((npos, ndir), vec![(p.pos, p.dir)]);
+                }
+            }
+            unvisited.push(Pos {
+                cost: new_cost,
+                pos: npos,
+                dir: ndir,
+            });
+        }
+    }
+
+    let mut res_1 = i32::MAX;
+    if let Some(r) = visited.get(&(goal, ivec2(1, 0))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(-1, 0))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, 1))) {
+        res_1 = res_1.min(*r);
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, -1))) {
+        res_1 = res_1.min(*r);
+    }
+
+    let mut seats = FxHashSet::default();
+
+    if let Some(r) = visited.get(&(goal, ivec2(1, 0))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(1, 0)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(-1, 0))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(-1, 0)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, 1))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(0, 1)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, -1))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(0, -1)), &mut seats);
+        }
+    }
+
+    println!("res: {}, {} us", seats.len(), t.elapsed().as_micros());
 
     Ok(())
+}
+
+fn count(
+    parents: &FxHashMap<(IVec2, IVec2), Vec<(IVec2, IVec2)>>,
+    pos: &(IVec2, IVec2),
+    seats: &mut FxHashSet<IVec2>,
+) {
+    seats.insert(pos.0);
+
+    if let Some(parent_vec) = parents.get(pos) {
+        for parent in parent_vec {
+            count(parents, parent, seats);
+        }
+    }
 }
