@@ -58,6 +58,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         dir: ivec2(1, 0),
     });
 
+    let mut parents = FxHashMap::default();
+
     while let Some(p) = unvisited.pop() {
         let mut neighbors: Vec<((IVec2, IVec2), i32)> = Vec::new();
 
@@ -86,14 +88,23 @@ fn main() -> Result<(), Box<dyn Error>> {
             let new_cost = p.cost + move_cost;
             match visited.entry((npos, ndir)) {
                 std::collections::hash_map::Entry::Occupied(occupied_entry) => {
-                    if *occupied_entry.get() > new_cost {
-                        visited.insert((npos, ndir), new_cost);
-                    } else {
-                        continue;
+                    match occupied_entry.get().cmp(&new_cost) {
+                        std::cmp::Ordering::Greater => {
+                            visited.insert((npos, ndir), new_cost);
+                            parents.insert((npos, ndir), vec![(p.pos, p.dir)]);
+                        }
+                        std::cmp::Ordering::Equal => {
+                            parents
+                                .entry((npos, ndir))
+                                .and_modify(|parent_list| parent_list.push((p.pos, p.dir)));
+                            continue;
+                        }
+                        std::cmp::Ordering::Less => continue,
                     }
                 }
                 std::collections::hash_map::Entry::Vacant(_vacant_entry) => {
                     visited.insert((npos, ndir), new_cost);
+                    parents.insert((npos, ndir), vec![(p.pos, p.dir)]);
                 }
             }
             unvisited.push(Pos {
@@ -118,21 +129,44 @@ fn main() -> Result<(), Box<dyn Error>> {
         res_1 = res_1.min(*r);
     }
 
-    println!("A res: {res_1}, {} us", t.elapsed().as_micros());
+    let mut seats = FxHashSet::default();
 
-    // for y in 0..=max_map.y {
-    //     for x in 0..=max_map.x {
-    //         let p = ivec2(x, y);
-    //         if obstacles.contains(&p) {
-    //             print!("#")
-    //         } else if besties.contains(&p) {
-    //             print!("O")
-    //         } else {
-    //             print!(".")
-    //         }
-    //     }
-    //     println!()
-    // }
+    if let Some(r) = visited.get(&(goal, ivec2(1, 0))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(1, 0)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(-1, 0))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(-1, 0)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, 1))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(0, 1)), &mut seats);
+        }
+    }
+    if let Some(r) = visited.get(&(goal, ivec2(0, -1))) {
+        if *r == res_1 {
+            count(&parents, &(goal, ivec2(0, -1)), &mut seats);
+        }
+    }
+
+    println!("res: {}, {} us", seats.len(), t.elapsed().as_micros());
 
     Ok(())
+}
+
+fn count(
+    parents: &FxHashMap<(IVec2, IVec2), Vec<(IVec2, IVec2)>>,
+    pos: &(IVec2, IVec2),
+    seats: &mut FxHashSet<IVec2>,
+) {
+    seats.insert(pos.0);
+
+    if let Some(parent_vec) = parents.get(pos) {
+        for parent in parent_vec {
+            count(parents, parent, seats);
+        }
+    }
 }
