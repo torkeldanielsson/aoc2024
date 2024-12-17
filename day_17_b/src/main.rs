@@ -2,6 +2,16 @@ use std::{error::Error, time::Instant};
 
 fn combo_op(operand: u64, reg_a: u64, reg_b: u64, reg_c: u64) -> u64 {
     match operand {
+        0 => println!("combo op 0 => 0"),
+        1 => println!("combo op 1 => 1"),
+        2 => println!("combo op 2 => 2"),
+        3 => println!("combo op 3 => 3"),
+        4 => println!("combo op 4 => reg_a ({reg_a})"),
+        5 => println!("combo op 5 => reg_b ({reg_b})"),
+        6 => println!("combo op 6 => reg_c ({reg_c})"),
+        _ => panic!(),
+    };
+    match operand {
         0 => 0,
         1 => 1,
         2 => 2,
@@ -32,70 +42,94 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|n| n.trim_ascii().parse::<u64>().unwrap())
         .collect();
 
+    let mut pc: usize = 0;
     let mut res = Vec::new();
 
-    let mut a_val = 0;
+    while pc < prog.len() {
+        match prog[pc] {
+            0 => {
+                let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
 
-    let mut last_print = Instant::now();
-
-    while res != prog {
-        res.clear();
-        a_val += 1;
-        reg_a = a_val;
-
-        let mut pc: usize = 0;
-
-        while pc < prog.len() {
-            match prog[pc] {
-                0 => {
-                    let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
-                    reg_a = if co >= 64 { 0 } else { reg_a >> co };
-                    pc += 2;
-                }
-                1 => {
-                    reg_b ^= prog[pc + 1];
-                    pc += 2;
-                }
-                2 => {
-                    reg_b = combo_op(prog[pc + 1], reg_a, reg_b, reg_c) & 7;
-                    pc += 2;
-                }
-                3 => {
-                    if reg_a == 0 {
-                        pc += 2;
-                    } else {
-                        pc = prog[pc + 1] as usize;
-                    }
-                }
-                4 => {
-                    reg_b ^= reg_c;
-                    pc += 2;
-                }
-                5 => {
-                    res.push(combo_op(prog[pc + 1], reg_a, reg_b, reg_c) & 7);
-                    pc += 2;
-                }
-                6 => {
-                    let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
-                    reg_b = if co >= 64 { 0 } else { reg_a >> co };
-                    pc += 2;
-                }
-                7 => {
-                    let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
-                    reg_c = if co >= 64 { 0 } else { reg_a >> co };
-                    pc += 2;
-                }
-                _ => panic!(),
+                reg_a = if co >= 64 {
+                    println!("{pc}\t0 right shift A co: {co}, reg_a: {reg_a}\t=> reg_a=0");
+                    0
+                } else {
+                    println!(
+                        "{pc}\t0 right shift A co: {co}, reg_a: {reg_a}\t=> reg_a={}",
+                        reg_a >> co
+                    );
+                    reg_a >> co
+                };
+                pc += 2;
             }
-        }
+            1 => {
+                println!(
+                    "{pc}\t1 XOR literal^B op: {}, reg_b: {reg_b}\t=> reg_b={}",
+                    prog[pc + 1],
+                    reg_b ^ prog[pc + 1]
+                );
 
-        if last_print.elapsed().as_secs() >= 1 {
-            println!("a_val: {a_val}, {res:?}, regs: {reg_a}, {reg_b}, {reg_c}");
-            last_print = Instant::now();
+                reg_b ^= prog[pc + 1];
+                pc += 2;
+            }
+            2 => {
+                let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
+
+                println!("co: {:#b}", co);
+                println!("res: {:#05b}", co & 7);
+                println!("{pc}\t2 truncate      co: {co},\t=> reg_b={}", co & 7);
+
+                reg_b = co & 7;
+                pc += 2;
+            }
+            3 => {
+                if reg_a == 0 {
+                    println!("{pc}\t3 no jump, reg_a = 0");
+
+                    pc += 2;
+                } else {
+                    println!(
+                        "{pc}\t3 JUMP          reg_a: {reg_a} => pc={}",
+                        prog[pc + 1]
+                    );
+
+                    pc = prog[pc + 1] as usize;
+                }
+            }
+            4 => {
+                println!(
+                    "{pc}\t4 XOR  B=B^C    reg_b: {reg_b}, reg_c: {reg_c} => reg_b={}",
+                    reg_b ^ reg_c
+                );
+
+                reg_b ^= reg_c;
+                pc += 2;
+            }
+            5 => {
+                let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
+
+                println!("{pc}\t5 print         co: {co} => printing {}", co & 7);
+
+                res.push(co & 7);
+                pc += 2;
+            }
+            6 => {
+                let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
+                reg_b = if co >= 64 { 0 } else { reg_a >> co };
+                println!("{pc}\t6 right shift B co: {co}, reg_a {reg_a} => reg_b={reg_b}");
+                pc += 2;
+            }
+            7 => {
+                let co = combo_op(prog[pc + 1], reg_a, reg_b, reg_c);
+                reg_c = if co >= 64 { 0 } else { reg_a >> co };
+                println!("{pc}\t6 right shift C co: {co}, reg_a {reg_a} => reg_c={reg_c} (reg_a: {reg_a:#b}, reg_c: {reg_c:#b})");
+                pc += 2;
+            }
+            _ => panic!(),
         }
     }
 
-    println!("res: {a_val}, {} us", t.elapsed().as_micros());
+    println!("res: {res:?}, {} us", t.elapsed().as_micros());
 
     Ok(())
 }
