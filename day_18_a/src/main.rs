@@ -30,21 +30,27 @@ impl PartialOrd for Pos {
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test");
+    let input = include_str!("../input");
 
     let mut obstacles = FxHashSet::with_capacity_and_hasher(50000, Default::default());
 
     let mut goal = ivec2(0, 0);
+
+    let mut obstacle_count = 1024;
 
     for line in input.lines() {
         let nums: Vec<i32> = line.split(",").map(|s| s.parse::<i32>().unwrap()).collect();
         obstacles.insert(ivec2(nums[0], nums[1]));
         goal.x = goal.x.max(nums[0]);
         goal.y = goal.y.max(nums[1]);
+        obstacle_count -= 1;
+        if obstacle_count == 0 {
+            break;
+        }
     }
 
     let mut open_set = BinaryHeap::new();
-    open_set.push(Pos::new(goal, ivec2(0, 0)));
+    open_set.push(Pos::new(goal.x + goal.y, ivec2(0, 0)));
 
     let mut came_from = FxHashMap::with_capacity_and_hasher(50000, Default::default());
 
@@ -52,19 +58,66 @@ fn main() -> Result<(), Box<dyn Error>> {
     g_score.insert(ivec2(0, 0), 0);
 
     let mut f_score = FxHashMap::with_capacity_and_hasher(50000, Default::default());
-    g_score.insert(ivec2(0, 0), goal.x + goal.y);
+    f_score.insert(ivec2(0, 0), goal.x + goal.y);
+
+    let mut path_back = Vec::new();
 
     while let Some(current) = open_set.pop() {
-        if current == goal {
-            // reconstruct path
+        if current.pos == goal {
+            path_back.push(goal);
+            let mut current = &goal;
+            while let Some(c) = came_from.get(current) {
+                current = c;
+                path_back.push(*current);
+            }
+
+            break;
         }
 
         for neighbor in &[ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1)] {
             let neighbor = current.pos + neighbor;
 
-            let tentative_score = g_score[&current.pos];
+            if obstacles.contains(&neighbor)
+                || neighbor.x < 0
+                || neighbor.y < 0
+                || neighbor.x > goal.x
+                || neighbor.y > goal.y
+            {
+                continue;
+            }
+
+            let tentative_g_score = g_score[&current.pos] + 1;
+
+            if tentative_g_score < *g_score.entry(neighbor).or_insert(i32::MAX) {
+                came_from.insert(neighbor, current.pos);
+                g_score.insert(neighbor, tentative_g_score);
+                let neighbor_f_score =
+                    tentative_g_score + goal.x - neighbor.x + goal.y - neighbor.y;
+                f_score.insert(neighbor, neighbor_f_score);
+                open_set.push(Pos::new(neighbor_f_score, neighbor));
+            }
         }
     }
+
+    // for y in 0..=goal.y {
+    //     for x in 0..=goal.x {
+    //         if obstacles.contains(&ivec2(x, y)) {
+    //             print!("#")
+    //         } else if path_back.contains(&ivec2(x, y)) {
+    //             print!("O")
+    //         } else {
+    //             print!(".")
+    //         }
+    //     }
+    //     println!();
+    // }
+    // println!();
+
+    println!(
+        "res: {}, {} us",
+        path_back.len() - 1,
+        t.elapsed().as_micros()
+    );
 
     Ok(())
 }
