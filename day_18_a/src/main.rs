@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let input = include_str!("../input");
 
-    let mut obstacles = FxHashSet::with_capacity_and_hasher(50000, Default::default());
+    let mut obstacles = FxHashSet::with_capacity_and_hasher(2000, Default::default());
 
     let mut goal = ivec2(0, 0);
 
@@ -52,25 +52,17 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut open_set = BinaryHeap::new();
     open_set.push(Pos::new(goal.x + goal.y, ivec2(0, 0)));
 
-    let mut came_from = FxHashMap::with_capacity_and_hasher(50000, Default::default());
-
-    let mut g_score = FxHashMap::with_capacity_and_hasher(50000, Default::default());
+    let mut g_score = FxHashMap::with_capacity_and_hasher(5000, Default::default());
     g_score.insert(ivec2(0, 0), 0);
 
-    let mut f_score = FxHashMap::with_capacity_and_hasher(50000, Default::default());
+    let mut f_score = FxHashMap::with_capacity_and_hasher(5000, Default::default());
     f_score.insert(ivec2(0, 0), goal.x + goal.y);
 
-    let mut path_back = Vec::new();
+    let mut res = 0;
 
     while let Some(current) = open_set.pop() {
         if current.pos == goal {
-            path_back.push(goal);
-            let mut current = &goal;
-            while let Some(c) = came_from.get(current) {
-                current = c;
-                path_back.push(*current);
-            }
-
+            res = g_score[&goal];
             break;
         }
 
@@ -89,7 +81,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             let tentative_g_score = g_score[&current.pos] + 1;
 
             if tentative_g_score < *g_score.entry(neighbor).or_insert(i32::MAX) {
-                came_from.insert(neighbor, current.pos);
                 g_score.insert(neighbor, tentative_g_score);
                 let neighbor_f_score =
                     tentative_g_score + goal.x - neighbor.x + goal.y - neighbor.y;
@@ -113,11 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // }
     // println!();
 
-    println!(
-        "res: {}, {} us",
-        path_back.len() - 1,
-        t.elapsed().as_micros()
-    );
+    println!("res: {res}, {} us", t.elapsed().as_micros());
 
     Ok(())
 }
