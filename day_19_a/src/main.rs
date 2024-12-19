@@ -1,39 +1,14 @@
-use std::{collections::BinaryHeap, error::Error, time::Instant};
+use std::{error::Error, time::Instant};
 
-use rustc_hash::FxHashMap;
+use rustc_hash::FxHashSet;
 
-#[derive(Eq, PartialEq)]
-struct Pos {
-    f_score: usize,
-    pos: usize,
-}
-
-impl Pos {
-    fn new(f_score: usize, pos: usize) -> Self {
-        Pos { f_score, pos }
+fn _print_word(word: &[u8]) -> String {
+    let mut res = String::new();
+    for d in word {
+        res = format!("{}{}", res, *d as char);
     }
+    res
 }
-
-impl Ord for Pos {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other.f_score.cmp(&self.f_score)
-    }
-}
-
-impl PartialOrd for Pos {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-// fn print_vec(v: &[u8]) -> String {
-//     let mut res = String::new();
-//
-//     for v in v {
-//         res = format!("{}{}", res, *v as char);
-//     }
-//     res
-// }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
@@ -49,53 +24,37 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|s| s.chars().map(|c| c as u8).collect())
         .collect();
 
-    let mut res = 0;
+    let mut res: u64 = 0;
 
-    'sentence_loop: for sentence in sentences {
-        let goal = sentence.len();
+    for sentence in sentences {
+        let mut jump_positions = FxHashSet::with_capacity_and_hasher(50, Default::default());
+        let mut tried = FxHashSet::with_capacity_and_hasher(50, Default::default());
 
-        let mut open_set = BinaryHeap::new();
-        open_set.push(Pos::new(goal, 0));
+        let mut pos = 0;
 
-        let mut g_score = FxHashMap::with_capacity_and_hasher(5000, Default::default());
-        g_score.insert(0, 0);
-
-        let mut f_score = FxHashMap::with_capacity_and_hasher(5000, Default::default());
-        f_score.insert(9, goal);
-
-        while let Some(current) = open_set.pop() {
-            if current.pos == goal {
-                res += 1;
-                continue 'sentence_loop;
-            }
-
+        while pos < sentence.len() {
             for word in &words {
-                // println!(
-                //     "{}: {} + maybe {}",
-                //     print_vec(&sentence),
-                //     print_vec(&sentence[0..current.pos]),
-                //     print_vec(word)
-                // );
-
-                if current.pos + word.len() <= sentence.len()
-                    && sentence[current.pos..current.pos + word.len()] == *word
-                {
-                    // println!("yes");
-
-                    let tentative_g_score = g_score[&current.pos] + word.len();
-
-                    if tentative_g_score
-                        < *g_score
-                            .entry(current.pos + word.len())
-                            .or_insert(usize::MAX)
-                    {
-                        g_score.insert(current.pos + word.len(), tentative_g_score);
-                        let neighbor_f_score = sentence.len() - (current.pos + word.len());
-                        f_score.insert(current.pos + word.len(), neighbor_f_score);
-                        open_set.push(Pos::new(neighbor_f_score, current.pos + word.len()));
-                    }
+                if sentence.len() >= pos + word.len() && &sentence[pos..pos + word.len()] == word {
+                    jump_positions.insert(pos + word.len());
                 }
             }
+
+            tried.insert(pos);
+
+            pos = 0;
+            for jpos in &jump_positions {
+                if !tried.contains(jpos) {
+                    pos = pos.max(*jpos);
+                }
+            }
+
+            if pos == 0 {
+                break;
+            }
+        }
+
+        if pos == sentence.len() {
+            res += 1;
         }
     }
 

@@ -2,7 +2,7 @@ use std::{error::Error, time::Instant};
 
 use rustc_hash::FxHashMap;
 
-fn print_word(word: &[u8]) -> String {
+fn _print_word(word: &[u8]) -> String {
     let mut res = String::new();
     for d in word {
         res = format!("{}{}", res, *d as char);
@@ -38,7 +38,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                     *jump_counts.entry(pos + word.len()).or_insert(0) += count;
                 }
             }
-
 
             pos = usize::MAX;
             for jpos in &jump_counts {
