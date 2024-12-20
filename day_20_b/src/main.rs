@@ -60,8 +60,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut res = 0;
 
-    //let mut cheats = vec![0; 101];
-
     for (start_pos, start_score) in &time_track {
         for manhattan_neighbor in &manhattan_neighbors {
             let neighbor = start_pos + manhattan_neighbor;
@@ -69,23 +67,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             if let Some(neighbor_track) = time_track.get(&neighbor) {
                 let cheat_score = *neighbor_track
                     - (start_score + manhattan_neighbor.x.abs() + manhattan_neighbor.y.abs());
-                if cheat_score > 0 {
-                    //cheats[cheat_score as usize] += 1;
-                    if cheat_score >= 100 {
-                        res += 1;
-                    }
+                if cheat_score >= 100 {
+                    res += 1;
                 }
             }
         }
     }
-
-    // for (i, cheats) in cheats.iter().enumerate() {
-    //     if i >= 50 && *cheats > 0 {
-    //         println!("There are {cheats} cheats that save {i} picoseconds.");
-    //     }
-    // }
-
-    // 1015392 too high
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
 
