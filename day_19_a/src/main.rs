@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let input_parts: Vec<&str> = include_str!("../input").split("\n\n").collect();
 
-    let words: Vec<Vec<u8>> = input_parts[0]
+    let mut words: Vec<Vec<u8>> = input_parts[0]
         .split(", ")
         .map(|s| s.chars().map(|c| c as u8).collect())
         .collect();
@@ -23,6 +23,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .lines()
         .map(|s| s.chars().map(|c| c as u8).collect())
         .collect();
+
+    words.sort_by_key(|f| -(f.len() as i32));
 
     let mut res: u64 = 0;
 

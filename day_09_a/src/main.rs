@@ -1,6 +1,6 @@
 use std::{error::Error, time::Instant};
 
-fn print_d(d: &[i32]) {
+fn _print_d(d: &[i32]) {
     for d in d {
         if *d < 0 {
             print!(".")
