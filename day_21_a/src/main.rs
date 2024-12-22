@@ -1,8 +1,42 @@
-use glam::ivec2;
+use glam::{ivec2, IVec2};
 use std::{error::Error, time::Instant};
 
 // v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A
 // <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
+
+fn mutate_walk_0(
+    pos: IVec2,
+    dest: IVec2,
+    mut path: Vec<char>,
+    all_paths: &mut Vec<Vec<char>>,
+    movement: char,
+) {
+    if pos == ivec2(0, 3) {
+        path.push('A');
+        all_paths.push(path);
+
+        return;
+    }
+
+    path.push(movement);
+
+    if pos == dest {
+        return;
+    }
+
+    if pos.x > dest.x {
+        mutate_walk_0(pos + ivec2(-1, 0), dest, path.clone(), all_paths, '<');
+    }
+    if pos.x < dest.x {
+        mutate_walk_0(pos + ivec2(1, 0), dest, path.clone(), all_paths, '>');
+    }
+    if pos.y > dest.y {
+        mutate_walk_0(pos + ivec2(0, -1), dest, path.clone(), all_paths, '^');
+    }
+    if pos.y < dest.y {
+        mutate_walk_0(pos + ivec2(0, 1), dest, path.clone(), all_paths, 'v');
+    }
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
@@ -32,26 +66,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 _ => panic!(),
             };
 
-            let mut movement = target_pos - pos_0;
+            let mut all_paths = Vec::new();
 
-            while movement.x > 0 {
-                movement.x -= 1;
-                movement_0.push('>');
-            }
-            while movement.y > 0 {
-                movement.y -= 1;
-                movement_0.push('v');
-            }
-            while movement.y < 0 {
-                movement.y += 1;
-                movement_0.push('^');
-            }
-            while movement.x < 0 {
-                movement.x += 1;
-                movement_0.push('<');
-            }
-
-            movement_0.push('A');
+            mutate_walk_0(pos_0, dest, path, all_paths, movement);
 
             pos_0 = target_pos;
         }
