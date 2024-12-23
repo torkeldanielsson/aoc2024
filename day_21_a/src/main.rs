@@ -77,7 +77,7 @@ fn mutate_walk_12(
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test1");
+    let input = include_str!("../input");
 
     let mut res = 0;
 
@@ -89,8 +89,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         // 379A
 
         for c in line.chars() {
-            println!("c: {c}");
-
             let target_pos = match c {
                 '0' => ivec2(1, 3),
                 '1' => ivec2(0, 2),
@@ -112,32 +110,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // 3->7 => <<^^A,  <^<^A,  <^^<A,  ^<<^A,  ^<^<A,  ^^<<A
 
-            println!("    all_paths_0  for {c} {pos_0} -> {target_pos}: ");
-            for path in &all_paths_0 {
-                print!("    ");
-                for c in path {
-                    print!("{c}");
-                }
-                println!();
-            }
-
             let mut all_paths_2: Vec<Vec<char>> = Vec::new();
 
             for path_0 in &all_paths_0 {
                 let mut path_2_full: Vec<char> = Vec::new();
 
                 // e.g. <<^^A
-                print!("    path_0: ");
-                for c in path_0 {
-                    print!("{c}");
-                }
-                println!();
 
                 let mut pos_1 = ivec2(2, 0);
 
                 for c in path_0 {
-                    println!("    processing c in path_0: {c}");
-
                     let target_pos_1 = match c {
                         'A' => ivec2(2, 0),
                         '^' => ivec2(1, 0),
@@ -153,22 +135,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     let mut all_path_2s_inner = Vec::new();
 
-                    println!("        all_paths_1 (for c {c}) for {path_0:?} {pos_1} -> {target_pos_1}: ");
                     for path_1 in &all_paths_1 {
-                        print!("        ");
-                        for c in path_1 {
-                            print!("{c}");
-                        }
-                        println!();
-                    }
-
-                    for path_1 in &all_paths_1 {
-                        print!("        path_1: ");
-                        for c in path_1 {
-                            print!("{c}");
-                        }
-                        println!();
-
                         let mut pos_2 = ivec2(2, 0);
 
                         let mut path_2_inner_from_p1: Vec<char> = Vec::new();
@@ -201,9 +168,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         all_path_2s_inner.push(path_2_inner_from_p1);
                     }
 
-                    println!("selecting shortes inner path2 from {all_path_2s_inner:?}");
-                    let shortest = all_path_2s_inner.iter().min_by_key(|path| path.len()).unwrap();
-                    println!("  => {shortest:?}");
+                    let shortest = all_path_2s_inner
+                        .iter()
+                        .min_by_key(|path| path.len())
+                        .unwrap();
                     path_2_full.extend(shortest);
 
                     pos_1 = target_pos_1;
@@ -212,8 +180,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 all_paths_2.push(path_2_full);
             }
 
-            println!("{c}: {all_paths_2:?}");
-
             let shortest = all_paths_2.iter().min_by_key(|path| path.len()).unwrap();
 
             movement_2.extend(shortest);
@@ -221,18 +187,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             pos_0 = target_pos;
         }
 
-        for c in &movement_2 {
-            print!("{c}");
-        }
-        println!();
-
         let numeric_part = line[0..3].parse::<i32>().unwrap();
-
-        print!("{} * {numeric_part} + ", movement_2.len() as i32);
-
         res += numeric_part * movement_2.len() as i32;
     }
-    println!();
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
 
