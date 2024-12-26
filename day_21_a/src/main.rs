@@ -61,16 +61,16 @@ fn mutate_walk_12(
     }
 
     if pos.x > dest.x {
-        mutate_walk_0(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
+        mutate_walk_12(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
     }
     if pos.x < dest.x {
-        mutate_walk_0(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
+        mutate_walk_12(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
     }
     if pos.y > dest.y {
-        mutate_walk_0(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
+        mutate_walk_12(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
     }
     if pos.y < dest.y {
-        mutate_walk_0(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
+        mutate_walk_12(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
     }
 }
 
