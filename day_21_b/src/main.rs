@@ -74,7 +74,7 @@ fn mutate_walk_directional(
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test1");
+    let input = include_str!("../test");
 
     let directional_positions = [
         ivec2(2, 0), // A
@@ -87,8 +87,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let directional_characters = ['A', '^', '<', 'v', '>'];
 
     let mut level_movement_costs = Vec::new();
-    let mut level_movement_paths = Vec::new();
-    level_movement_paths.insert(0, HashMap::new());
 
     let mut level_0_costs = HashMap::new();
     for i in 0..directional_positions.len() {
@@ -100,10 +98,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for level in 1..3 {
         let mut level_costs = HashMap::new();
-        let mut level_paths = HashMap::new();
 
         let level_above_costs = &level_movement_costs[level - 1];
-        println!("level {level}, level_above_costs: {level_above_costs:?}");
+        println!();
+        println!("level {level}, level_above_costs:");
+        for i in 0..directional_positions.len() {
+            print!("{} -> ", directional_characters[i]);
+            for j in 0..directional_positions.len() {
+                print!(
+                    "{}: {}, ",
+                    directional_characters[j],
+                    level_above_costs[&(directional_characters[i], directional_characters[j])]
+                );
+            }
+            println!();
+        }
 
         for i in 0..directional_positions.len() {
             for j in 0..directional_positions.len() {
@@ -126,24 +135,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                         print!("{c}");
                     }
 
-                    if path.len() > 1 {
-                        let mut path_cost = 0;
-                        let mut c = 'A';
-                        for p in path[0..].iter() {
-                            let cost = level_above_costs[&(c, *p)];
-                            c = *p;
-                            path_cost += cost;
-                        }
-
-                        let cost = level_above_costs[&(c, 'A')];
-                        path_cost += cost;
-
-                        all_paths_costs.push(path_cost);
-                        print!(": {path_cost}");
-                    } else {
-                        all_paths_costs.push(1);
-                        print!("A: 1");
+                    let mut path_cost = 0;
+                    let mut c = 'A';
+                    for p in path.iter() {
+                        path_cost += level_above_costs[&(c, *p)];
+                        c = *p;
                     }
+
+                    all_paths_costs.push(path_cost);
+                    print!(": {path_cost}");
 
                     println!();
                 }
@@ -162,27 +162,31 @@ fn main() -> Result<(), Box<dyn Error>> {
                     (directional_characters[i], directional_characters[j]),
                     lowest_cost,
                 );
-                level_paths.insert(
-                    (directional_characters[i], directional_characters[j]),
-                    lowest_cost_path,
-                );
             }
         }
 
         level_movement_costs.insert(level, level_costs);
-        level_movement_paths.insert(level, level_paths);
     }
 
     let last_directional_level_costs = level_movement_costs.last().unwrap();
-    let last_directional_level_paths = level_movement_paths.last().unwrap();
 
-    println!("last_directional_level_costs: {last_directional_level_costs:?}");
-    println!("last_directional_level_paths: {last_directional_level_paths:?}");
+    println!();
+    println!("last level costs:");
+    for i in 0..directional_positions.len() {
+        print!("{} -> ", directional_characters[i]);
+        for j in 0..directional_positions.len() {
+            print!(
+                "{}: {}, ",
+                directional_characters[j],
+                last_directional_level_costs
+                    [&(directional_characters[i], directional_characters[j])]
+            );
+        }
+        println!();
+    }
 
     for line in input.lines() {
         let mut pos = ivec2(2, 3);
-
-        // 379A
 
         let mut line_cost = 0;
 
@@ -209,7 +213,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             pos = target_pos;
 
             let mut all_paths_costs = Vec::new();
-            let mut all_paths_paths = Vec::new();
 
             for path in &all_paths {
                 for c in path {
@@ -217,23 +220,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
 
                 let mut path_cost = 0;
-                let mut path_path = Vec::new();
-                for pi in 0..path.len() - 1 {
-                    let from = path[pi];
-                    let to = path[pi + 1];
-                    let cost = last_directional_level_costs[&(from, to)];
-                    path_cost += cost;
-
-                    let p_p = &last_directional_level_paths[&(from, to)];
-                    path_path.extend(p_p);
+                let mut c = 'A';
+                for p in path.iter() {
+                    path_cost += last_directional_level_costs[&(c, *p)];
+                    c = *p;
                 }
 
-                path_path.push('A');
-
                 all_paths_costs.push(path_cost);
-
-                all_paths_paths.push(path_path);
-
                 print!(": {path_cost}");
 
                 println!();
@@ -241,19 +234,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             let mut lowest_cost = i32::MAX;
 
-            let mut lowest_cost_index = 0;
-
             for i in 0..all_paths.len() {
                 if all_paths_costs[i] < lowest_cost {
                     lowest_cost = all_paths_costs[i];
-                    lowest_cost_index = i;
                 }
             }
-
-            println!(
-                "lowest path path path {:?}",
-                all_paths_paths[lowest_cost_index]
-            );
 
             line_cost += lowest_cost;
         }
