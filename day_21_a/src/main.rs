@@ -1,10 +1,7 @@
 use glam::{ivec2, IVec2};
-use std::{error::Error, time::Instant};
+use std::{collections::HashMap, error::Error, time::Instant};
 
-// v<<A>>^AvA^Av<<A>>^AAv<A<A>>^AAvAA^<A>Av<A>^AA<A>Av<A<A>>^AAAvA^<A>A
-// <v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A
-
-fn mutate_walk_0(
+fn mutate_walk_numeric(
     pos: IVec2,
     dest: IVec2,
     mut path: Vec<char>,
@@ -26,20 +23,20 @@ fn mutate_walk_0(
     }
 
     if pos.x > dest.x {
-        mutate_walk_0(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
+        mutate_walk_numeric(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
     }
     if pos.x < dest.x {
-        mutate_walk_0(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
+        mutate_walk_numeric(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
     }
     if pos.y > dest.y {
-        mutate_walk_0(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
+        mutate_walk_numeric(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
     }
     if pos.y < dest.y {
-        mutate_walk_0(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
+        mutate_walk_numeric(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
     }
 }
 
-fn mutate_walk_12(
+fn mutate_walk_directional(
     pos: IVec2,
     dest: IVec2,
     mut path: Vec<char>,
@@ -61,16 +58,16 @@ fn mutate_walk_12(
     }
 
     if pos.x > dest.x {
-        mutate_walk_12(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
+        mutate_walk_directional(pos + ivec2(-1, 0), dest, path.clone(), all_paths, Some('<'));
     }
     if pos.x < dest.x {
-        mutate_walk_12(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
+        mutate_walk_directional(pos + ivec2(1, 0), dest, path.clone(), all_paths, Some('>'));
     }
     if pos.y > dest.y {
-        mutate_walk_12(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
+        mutate_walk_directional(pos + ivec2(0, -1), dest, path.clone(), all_paths, Some('^'));
     }
     if pos.y < dest.y {
-        mutate_walk_12(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
+        mutate_walk_directional(pos + ivec2(0, 1), dest, path.clone(), all_paths, Some('v'));
     }
 }
 
@@ -79,14 +76,81 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let input = include_str!("../input");
 
+    let directional_positions = [
+        ivec2(2, 0), // A
+        ivec2(1, 0), // ^
+        ivec2(0, 1), // <
+        ivec2(1, 1), // v
+        ivec2(2, 1), // >
+    ];
+
+    let directional_characters = ['A', '^', '<', 'v', '>'];
+
+    let mut level_movement_costs = Vec::new();
+
+    let mut level_0_costs = HashMap::new();
+    for i in 0..directional_positions.len() {
+        for j in 0..directional_positions.len() {
+            level_0_costs.insert((directional_characters[i], directional_characters[j]), 1);
+        }
+    }
+    level_movement_costs.push(level_0_costs);
+
+    for level in 1..3 {
+        let mut level_costs = HashMap::new();
+
+        let level_above_costs = &level_movement_costs[level - 1];
+
+        for i in 0..directional_positions.len() {
+            for j in 0..directional_positions.len() {
+                let pos_1 = directional_positions[i];
+                let pos_2 = directional_positions[j];
+
+                let mut all_paths = Vec::new();
+
+                mutate_walk_directional(pos_1, pos_2, Vec::new(), &mut all_paths, None);
+
+                let mut all_paths_costs = Vec::new();
+
+                for path in &all_paths {
+                    let mut path_cost = 0;
+                    let mut c = 'A';
+                    for p in path.iter() {
+                        path_cost += level_above_costs[&(c, *p)];
+                        c = *p;
+                    }
+
+                    all_paths_costs.push(path_cost);
+                }
+
+                let mut lowest_cost = i32::MAX;
+                let mut lowest_cost_path = Vec::new();
+
+                for i in 0..all_paths.len() {
+                    if all_paths_costs[i] < lowest_cost {
+                        lowest_cost = all_paths_costs[i];
+                        lowest_cost_path = all_paths[i].clone();
+                    }
+                }
+
+                level_costs.insert(
+                    (directional_characters[i], directional_characters[j]),
+                    lowest_cost,
+                );
+            }
+        }
+
+        level_movement_costs.insert(level, level_costs);
+    }
+
+    let last_directional_level_costs = level_movement_costs.last().unwrap();
+
     let mut res = 0;
 
     for line in input.lines() {
-        let mut pos_0 = ivec2(2, 3);
+        let mut pos = ivec2(2, 3);
 
-        let mut movement_2: Vec<char> = Vec::new();
-
-        // 379A
+        let mut line_cost = 0;
 
         for c in line.chars() {
             let target_pos = match c {
@@ -104,91 +168,39 @@ fn main() -> Result<(), Box<dyn Error>> {
                 _ => panic!(),
             };
 
-            let mut all_paths_0 = Vec::new();
+            let mut all_paths = Vec::new();
 
-            mutate_walk_0(pos_0, target_pos, Vec::new(), &mut all_paths_0, None);
+            mutate_walk_numeric(pos, target_pos, Vec::new(), &mut all_paths, None);
 
-            // 3->7 => <<^^A,  <^<^A,  <^^<A,  ^<<^A,  ^<^<A,  ^^<<A
+            pos = target_pos;
 
-            let mut all_paths_2: Vec<Vec<char>> = Vec::new();
+            let mut all_paths_costs = Vec::new();
 
-            for path_0 in &all_paths_0 {
-                let mut path_2_full: Vec<char> = Vec::new();
-
-                // e.g. <<^^A
-
-                let mut pos_1 = ivec2(2, 0);
-
-                for c in path_0 {
-                    let target_pos_1 = match c {
-                        'A' => ivec2(2, 0),
-                        '^' => ivec2(1, 0),
-                        '<' => ivec2(0, 1),
-                        'v' => ivec2(1, 1),
-                        '>' => ivec2(2, 1),
-                        _ => panic!(),
-                    };
-
-                    let mut all_paths_1 = Vec::new();
-
-                    mutate_walk_12(pos_1, target_pos_1, Vec::new(), &mut all_paths_1, None);
-
-                    let mut all_path_2s_inner = Vec::new();
-
-                    for path_1 in &all_paths_1 {
-                        let mut pos_2 = ivec2(2, 0);
-
-                        let mut path_2_inner_from_p1: Vec<char> = Vec::new();
-
-                        for c in path_1 {
-                            let target_pos_2 = match c {
-                                'A' => ivec2(2, 0),
-                                '^' => ivec2(1, 0),
-                                '<' => ivec2(0, 1),
-                                'v' => ivec2(1, 1),
-                                '>' => ivec2(2, 1),
-                                _ => panic!(),
-                            };
-
-                            let mut all_paths_2_inner = Vec::new();
-
-                            mutate_walk_12(
-                                pos_2,
-                                target_pos_2,
-                                Vec::new(),
-                                &mut all_paths_2_inner,
-                                None,
-                            );
-
-                            path_2_inner_from_p1.extend(all_paths_2_inner.first().unwrap());
-
-                            pos_2 = target_pos_2;
-                        }
-
-                        all_path_2s_inner.push(path_2_inner_from_p1);
-                    }
-
-                    let shortest = all_path_2s_inner
-                        .iter()
-                        .min_by_key(|path| path.len())
-                        .unwrap();
-                    path_2_full.extend(shortest);
-
-                    pos_1 = target_pos_1;
+            for path in &all_paths {
+                let mut path_cost = 0;
+                let mut c = 'A';
+                for p in path.iter() {
+                    path_cost += last_directional_level_costs[&(c, *p)];
+                    c = *p;
                 }
 
-                all_paths_2.push(path_2_full);
+                all_paths_costs.push(path_cost);
             }
 
-            let shortest = all_paths_2.iter().min_by_key(|path| path.len()).unwrap();
+            let mut lowest_cost = i32::MAX;
 
-            movement_2.extend(shortest);
+            for i in 0..all_paths.len() {
+                if all_paths_costs[i] < lowest_cost {
+                    lowest_cost = all_paths_costs[i];
+                }
+            }
 
-            pos_0 = target_pos;
+            line_cost += lowest_cost;
         }
 
         let numeric_part = line[0..3].parse::<i32>().unwrap();
-        res += numeric_part * movement_2.len() as i32;
+
+        res += numeric_part * line_cost;
     }
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
