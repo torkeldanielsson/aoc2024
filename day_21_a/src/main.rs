@@ -91,7 +91,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut level_0_costs = HashMap::new();
     for i in 0..directional_positions.len() {
         for j in 0..directional_positions.len() {
-            level_0_costs.insert((directional_characters[i], directional_characters[j]), 1);
+            level_0_costs.insert(
+                (directional_characters[i], directional_characters[j]),
+                1_u64,
+            );
         }
     }
     level_movement_costs.push(level_0_costs);
@@ -123,15 +126,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                     all_paths_costs.push(path_cost);
                 }
 
-                let mut lowest_cost = i32::MAX;
-                let mut lowest_cost_path = Vec::new();
-
-                for i in 0..all_paths.len() {
-                    if all_paths_costs[i] < lowest_cost {
-                        lowest_cost = all_paths_costs[i];
-                        lowest_cost_path = all_paths[i].clone();
-                    }
-                }
+                let lowest_cost = all_paths_costs
+                    .iter()
+                    .take(all_paths.len())
+                    .copied()
+                    .min()
+                    .unwrap();
 
                 level_costs.insert(
                     (directional_characters[i], directional_characters[j]),
@@ -187,20 +187,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                 all_paths_costs.push(path_cost);
             }
 
-            let mut lowest_cost = i32::MAX;
-
-            for i in 0..all_paths.len() {
-                if all_paths_costs[i] < lowest_cost {
-                    lowest_cost = all_paths_costs[i];
-                }
-            }
+            let lowest_cost = all_paths_costs
+                .iter()
+                .take(all_paths.len())
+                .copied()
+                .min()
+                .unwrap();
 
             line_cost += lowest_cost;
         }
 
         let numeric_part = line[0..3].parse::<i32>().unwrap();
 
-        res += numeric_part * line_cost;
+        res += numeric_part as u128 * line_cost as u128;
     }
 
     println!("res: {res}, {} us", t.elapsed().as_micros());

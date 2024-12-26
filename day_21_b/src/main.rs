@@ -126,19 +126,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                     all_paths_costs.push(path_cost);
                 }
 
-                let mut lowest_cost = u64::MAX;
-                let mut lowest_cost_path = Vec::new();
-
-                for i in 0..all_paths.len() {
-                    if all_paths_costs[i] < lowest_cost {
-                        lowest_cost = all_paths_costs[i];
-                        lowest_cost_path = all_paths[i].clone();
-                    }
-                }
+                let lowest_cost = all_paths_costs
+                    .iter()
+                    .take(all_paths.len())
+                    .copied()
+                    .min()
+                    .unwrap();
 
                 level_costs.insert(
                     (directional_characters[i], directional_characters[j]),
-                    lowest_cost as u64,
+                    lowest_cost,
                 );
             }
         }
@@ -190,13 +187,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 all_paths_costs.push(path_cost);
             }
 
-            let mut lowest_cost = u64::MAX;
-
-            for i in 0..all_paths.len() {
-                if all_paths_costs[i] < lowest_cost {
-                    lowest_cost = all_paths_costs[i];
-                }
-            }
+            let lowest_cost = all_paths_costs
+                .iter()
+                .take(all_paths.len())
+                .copied()
+                .min()
+                .unwrap();
 
             line_cost += lowest_cost;
         }
