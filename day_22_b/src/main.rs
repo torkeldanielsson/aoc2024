@@ -59,13 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    let mut res = 0;
-
-    for (_, pattern_res) in pattern_sums {
-        if pattern_res > res {
-            res = pattern_res;
-        }
-    }
+    let res = pattern_sums.values().max().copied().unwrap_or(0);
 
     println!("res: {res}, {} us", t.elapsed().as_micros());
 
