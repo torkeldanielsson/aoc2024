@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for line in input.lines() {
         let mut val = line.parse::<i64>().unwrap();
 
-        let mut val_last_digits = Vec::new();
+        let mut val_last_digits = Vec::with_capacity(2002);
         val_last_digits.push((val % 10) as i8);
 
         for _ in 0..2000 {
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut diffs = Vec::new();
 
     for ld in &last_digits {
-        let mut diff = Vec::new();
+        let mut diff = Vec::with_capacity(2002);
         diff.push(0);
         for pair in ld.windows(2) {
             let d = pair[1] - pair[0];
