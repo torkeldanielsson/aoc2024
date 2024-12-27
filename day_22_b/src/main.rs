@@ -1,9 +1,10 @@
+use rustc_hash::FxHashSet;
 use std::{error::Error, time::Instant};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test1");
+    let input = include_str!("../input");
 
     let mut last_digits = Vec::new();
 
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for ld in &last_digits {
         let mut diff = Vec::new();
+        diff.push(0);
         for pair in ld.windows(2) {
             let d = pair[1] - pair[0];
             diff.push(d);
@@ -36,11 +38,47 @@ fn main() -> Result<(), Box<dyn Error>> {
         diffs.push(diff);
     }
 
-    for i in 0..10 {
-        println!("{} {}", last_digits[0][i + 1], diffs[0][i]);
+    let mut nine_patterns = FxHashSet::default();
+
+    for ldi in 0..last_digits.len() {
+        let ld = &last_digits[ldi];
+
+        for (i, item) in ld.iter().enumerate().skip(4) {
+            if *item == 9 {
+                nine_patterns.insert((
+                    diffs[ldi][i - 3],
+                    diffs[ldi][i - 2],
+                    diffs[ldi][i - 1],
+                    diffs[ldi][i],
+                ));
+                break;
+            }
+        }
     }
 
-    // println!("res: {res}, {} us", t.elapsed().as_micros());
+    let mut res = 0;
+
+    for pattern in nine_patterns {
+        let mut pattern_res = 0;
+        for i in 0..diffs.len() {
+            let diff = &diffs[i];
+            for j in 1..diff.len() - 3 {
+                if diff[j] == pattern.0
+                    && diff[j + 1] == pattern.1
+                    && diff[j + 2] == pattern.2
+                    && diff[j + 3] == pattern.3
+                {
+                    pattern_res += last_digits[i][j + 3] as u32;
+                    break;
+                }
+            }
+        }
+        if pattern_res > res {
+            res = pattern_res;
+        }
+    }
+
+    println!("res: {res}, {} us", t.elapsed().as_micros());
 
     Ok(())
 }
