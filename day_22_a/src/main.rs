@@ -10,14 +10,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     for line in input.lines() {
         let mut val = line.parse::<u64>().unwrap();
 
-        // print!("{val}: ");
-
         for _ in 0..2000 {
-            val = (val ^ (val * 64)) % 16777216;
-            val = (val ^ (val / 32)) % 16777216;
-            val = (val ^ (val * 2048)) % 16777216;
+            val = (val ^ (val << 6)) & 0xFFFFFF;
+            val = (val ^ (val >> 5)) & 0xFFFFFF;
+            val = (val ^ (val << 11)) & 0xFFFFFF;
         }
-        // println!("{val}");
 
         res += val;
     }
