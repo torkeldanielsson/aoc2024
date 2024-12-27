@@ -72,26 +72,51 @@ fn bron_kerbosch(
         return;
     }
 
-    for candidate in candidates.clone().iter() {
+    if candidates.is_empty() {
+        return;
+    }
+
+    let pivot = candidates
+        .iter()
+        .chain(excluded.iter())
+        .max_by_key(|&v| connections[v].intersection(candidates).count())
+        .copied()
+        .unwrap();
+
+    let pivot_non_neighbors: FxHashSet<_> = candidates
+        .difference(&connections[&pivot])
+        .copied()
+        .collect();
+
+    let vertices_to_process: Vec<u16> = if !pivot_non_neighbors.is_empty() {
+        pivot_non_neighbors.into_iter().collect()
+    } else {
+        candidates.iter().copied().collect()
+    };
+
+    for candidate in vertices_to_process {
         let mut new_clique = potential_clique.clone();
-        new_clique.insert(*candidate);
-        let candidate_neighbors = &connections[candidate];
-        let mut candidate_neighbors_intersected_with_all_candidates = candidates
+        new_clique.insert(candidate);
+
+        let candidate_neighbors = &connections[&candidate];
+        let mut new_candidates = candidates
             .intersection(candidate_neighbors)
             .copied()
             .collect();
-        let mut candidate_neighbors_intersected_with_excluded =
-            candidates.intersection(excluded).copied().collect();
+        let mut new_excluded = excluded
+            .intersection(candidate_neighbors)
+            .copied()
+            .collect();
 
         bron_kerbosch(
             connections,
             &mut new_clique,
-            &mut candidate_neighbors_intersected_with_all_candidates,
-            &mut candidate_neighbors_intersected_with_excluded,
+            &mut new_candidates,
+            &mut new_excluded,
             results,
         );
 
-        candidates.remove(candidate);
-        excluded.insert(*candidate);
+        candidates.remove(&candidate);
+        excluded.insert(candidate);
     }
 }
