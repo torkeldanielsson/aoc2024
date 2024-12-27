@@ -5,7 +5,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 fn main() -> Result<(), Box<dyn Error>> {
     let t = Instant::now();
 
-    let input = include_str!("../test");
+    let input = include_str!("../input");
 
     let mut connections = FxHashMap::default();
     let mut computers = FxHashSet::default();
@@ -27,86 +27,55 @@ fn main() -> Result<(), Box<dyn Error>> {
         computers.insert(comp_2);
     }
 
-    let mut largest_lan_party = FxHashSet::default();
+    let mut cliques = FxHashSet::default();
 
-    for computer_1 in &computers {
-        let connections_1 = &connections[computer_1];
-        let mut lan_party = connections[computer_1].clone();
-        lan_party.insert(*computer_1);
+    bron_kerbosch(
+        &connections,
+        &mut FxHashSet::default(),
+        &mut computers,
+        &mut FxHashSet::default(),
+        &mut cliques,
+    );
 
-        println!(
-            "checking computer {}{}",
-            (computer_1 >> 8) as u8 as char,
-            (computer_1 & 0xFF) as u8 as char,
-        );
+    let mut lan_party = Vec::new();
 
-        print!("OG lan party: ");
-        for comp in &lan_party {
-            print!(
-                "{}{}, ",
-                (comp >> 8) as u8 as char,
-                (comp & 0xFF) as u8 as char,
-            );
-        }
-        println!();
-
-        for computer_2 in connections_1 {
-            let mut lan_party_2 = connections[computer_2].clone();
-            lan_party_2.insert(*computer_2);
-
-            print!("lan_party_2: ");
-            for comp in &lan_party_2 {
-                print!(
-                    "{}{}, ",
-                    (comp >> 8) as u8 as char,
-                    (comp & 0xFF) as u8 as char,
-                );
-            }
-            println!();
-
-            lan_party = lan_party.intersection(&lan_party_2).copied().collect();
-
-            print!("intersected lan party: ");
-            for comp in &lan_party {
-                print!(
-                    "{}{}, ",
-                    (comp >> 8) as u8 as char,
-                    (comp & 0xFF) as u8 as char,
-                );
-            }
-            println!();
-        }
-        if lan_party.len() > largest_lan_party.len() {
-            largest_lan_party = lan_party;
+    for clique in &cliques {
+        if clique.len() > lan_party.len() {
+            lan_party = clique.clone();
         }
     }
 
-    println!(
-        "largest_lan_party: {largest_lan_party:?}, {} us",
-        t.elapsed().as_micros()
-    );
-
-    //  println!("res: {}, {} us", t_triplets.len(), t.elapsed().as_micros());
+    print!("res: ");
+    for comp in lan_party {
+        print!(
+            "{}{},",
+            (comp >> 8) as u8 as char,
+            (comp & 0xFF) as u8 as char,
+        );
+    }
+    println!(" {} us", t.elapsed().as_micros());
 
     Ok(())
 }
 
 fn bron_kerbosch(
-    graph: &FxHashMap<i32, FxHashSet<i32>>,
-    potential_clique: &mut FxHashSet<i32>, // R
-    candidates: &mut FxHashSet<i32>,       // P
-    excluded: &mut FxHashSet<i32>,         // X
-    results: &mut Vec<FxHashSet<i32>>,
+    connections: &FxHashMap<u16, FxHashSet<u16>>,
+    potential_clique: &mut FxHashSet<u16>, // R
+    candidates: &mut FxHashSet<u16>,       // P
+    excluded: &mut FxHashSet<u16>,         // X
+    results: &mut FxHashSet<Vec<u16>>,
 ) {
     if candidates.is_empty() && excluded.is_empty() {
-        results.push(potential_clique.clone());
+        let mut clique: Vec<u16> = potential_clique.iter().copied().collect();
+        clique.sort();
+        results.insert(clique);
         return;
     }
 
-    for candidate in candidates.iter() {
+    for candidate in candidates.clone().iter() {
         let mut new_clique = potential_clique.clone();
         new_clique.insert(*candidate);
-        let candidate_neighbors = &graph[candidate];
+        let candidate_neighbors = &connections[candidate];
         let mut candidate_neighbors_intersected_with_all_candidates = candidates
             .intersection(candidate_neighbors)
             .copied()
@@ -115,11 +84,14 @@ fn bron_kerbosch(
             candidates.intersection(excluded).copied().collect();
 
         bron_kerbosch(
-            graph,
+            connections,
             &mut new_clique,
             &mut candidate_neighbors_intersected_with_all_candidates,
             &mut candidate_neighbors_intersected_with_excluded,
             results,
         );
+
+        candidates.remove(candidate);
+        excluded.insert(*candidate);
     }
 }
