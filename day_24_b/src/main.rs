@@ -66,35 +66,11 @@ fn match_wire_operation(
             } else if ((to_match.output) & 0xFF) as u8 as char == 'z'
                 || ((ex_op.output) & 0xFF) as u8 as char == 'z'
             {
-                println!(
-                    "    ex_op: {} {:?} {} -> {}, to_match: {} {:?} {} -> {}",
-                    u32_to_label(ex_op.wire_a),
-                    ex_op.op,
-                    u32_to_label(ex_op.wire_b),
-                    u32_to_label(ex_op.output),
-                    u32_to_label(to_match.wire_a),
-                    to_match.op,
-                    u32_to_label(to_match.wire_b),
-                    u32_to_label(to_match.output)
-                );
-
-                println!(
-                    "    mismatch on z? {} <> {}",
-                    u32_to_label(to_match.output),
-                    u32_to_label(ex_op.output)
-                );
-
                 master_corrections.insert(to_match.output, ex_op.output);
                 master_corrections.insert(ex_op.output, to_match.output);
                 return false;
             } else {
                 translation_table.insert(to_match.output, ex_op.output);
-
-                // print!("translation_table: ");
-                // for tr in translation_table.iter() {
-                //     print!("{}>{} ",u32_to_label(*tr.0),u32_to_label(*tr.1))
-                // }
-                // println!();
             }
 
             return true;
@@ -104,48 +80,24 @@ fn match_wire_operation(
     for ex_op in existing_ops.iter() {
         if ex_op.op == to_match.op && ex_op.output == to_match.output {
             if ex_op.wire_a == to_match.wire_a {
-                println!(
-                    "    patching wrong input {} <> {}",
-                    u32_to_label(ex_op.wire_b),
-                    u32_to_label(to_match.wire_b)
-                );
-
                 master_corrections.insert(to_match.wire_b, ex_op.wire_b);
                 master_corrections.insert(ex_op.wire_b, to_match.wire_b);
                 return false;
             }
 
             if ex_op.wire_a == to_match.wire_b {
-                println!(
-                    "    patching wrong input {} <> {}",
-                    u32_to_label(ex_op.wire_b),
-                    u32_to_label(to_match.wire_a)
-                );
-
                 master_corrections.insert(to_match.wire_a, ex_op.wire_b);
                 master_corrections.insert(ex_op.wire_b, to_match.wire_a);
                 return false;
             }
 
             if ex_op.wire_b == to_match.wire_a {
-                println!(
-                    "    patching wrong input {} <> {}",
-                    u32_to_label(ex_op.wire_a),
-                    u32_to_label(to_match.wire_b)
-                );
-
                 master_corrections.insert(to_match.wire_b, ex_op.wire_a);
                 master_corrections.insert(ex_op.wire_a, to_match.wire_b);
                 return false;
             }
 
             if ex_op.wire_b == to_match.wire_b {
-                println!(
-                    "    patching wrong input {} <> {}",
-                    u32_to_label(ex_op.wire_a),
-                    u32_to_label(to_match.wire_a)
-                );
-
                 master_corrections.insert(to_match.wire_a, ex_op.wire_a);
                 master_corrections.insert(ex_op.wire_a, to_match.wire_a);
                 return false;
@@ -221,19 +173,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         let mut provided_wire_ops_copy = provided_wire_ops.clone();
 
-        print!("output_translation_table: ");
-        for tr in master_corrections.iter() {
-            print!("{}>{} ", u32_to_label(*tr.0), u32_to_label(*tr.1));
-        }
-        println!();
-
         for wro in provided_wire_ops_copy.iter_mut() {
             if let Some(other_output) = master_corrections.get(&wro.output) {
-                println!(
-                    "swapping output {} <> {}",
-                    u32_to_label(wro.output),
-                    u32_to_label(*other_output)
-                );
                 wro.output = *other_output;
             }
         }
