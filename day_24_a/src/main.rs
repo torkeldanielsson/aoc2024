@@ -67,8 +67,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         loose_wires = loose_wires_pong;
     }
 
-    // println!("wires: {wires:?}");
-
     let mut res = 0_u64;
 
     for z in 0..64 {
